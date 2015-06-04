@@ -36,7 +36,7 @@ namespace Serilog
         /// A reasonable default time to wait between checking for event batches.
         /// </summary>
         public static readonly TimeSpan DefaultPeriod = TimeSpan.FromSeconds(2);
-
+        
 		/// <summary>
         /// Adds a sink that writes log events as records in the 'LogEventEntity' Azure Table Storage table in the given storage account.
         /// </summary>

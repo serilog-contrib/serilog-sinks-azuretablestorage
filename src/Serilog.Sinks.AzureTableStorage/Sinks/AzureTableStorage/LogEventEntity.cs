@@ -49,7 +49,7 @@ namespace Serilog.Sinks.AzureTableStorage
         {
             Timestamp = log.Timestamp.ToUniversalTime().DateTime;
             PartitionKey = string.Format("0{0}", partitionKey);
-            RowKey = GetValidRowKey(string.Format("{0}|{1}", log.Level, log.MessageTemplate.Text));
+            RowKey = GetValidRowKey(this, string.Format("{0}|{1}", log.Level, log.MessageTemplate.Text), 0);
             MessageTemplate = log.MessageTemplate.Text;
             Level = log.Level.ToString();
             Exception = log.Exception != null ? log.Exception.ToString() : null;
@@ -60,7 +60,7 @@ namespace Serilog.Sinks.AzureTableStorage
         }
 
         // http://msdn.microsoft.com/en-us/library/windowsazure/dd179338.aspx
-        static string GetValidRowKey(string rowKey)
+        internal static string GetValidRowKey(LogEventEntity entity, string rowKey, int batchRowId)
         {
             rowKey = RowKeyNotAllowedMatch.Replace(rowKey, "");
             return rowKey.Length > 1024 ? rowKey.Substring(0, 1024) : rowKey;

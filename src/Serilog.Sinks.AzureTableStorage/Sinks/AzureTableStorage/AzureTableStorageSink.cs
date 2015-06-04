@@ -30,13 +30,16 @@ namespace Serilog.Sinks.AzureTableStorage
         readonly CloudTable _table;
         long _rowKeyIndex;
 
+        Action<ITableEntity> _rowKeyFunc;
+
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
         /// </summary>
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-        public AzureTableStorageSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, string storageTableName = null)
+        /// <param name="rowKeyFunc">Function to modify the generated row key</param>
+        public AzureTableStorageSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, string storageTableName = null, Action<ITableEntity> rowKeyFunc = null)
         {
             _formatProvider = formatProvider;
             var tableClient = storageAccount.CreateCloudTableClient();
@@ -48,6 +51,8 @@ namespace Serilog.Sinks.AzureTableStorage
 
             _table = tableClient.GetTableReference(storageTableName);
             _table.CreateIfNotExists();
+
+            _rowKeyFunc = rowKeyFunc ?? EnsureUniqueRowKey;
         }
 
         /// <summary>
@@ -60,7 +65,12 @@ namespace Serilog.Sinks.AzureTableStorage
                 logEvent,
                 _formatProvider,
                 logEvent.Timestamp.ToUniversalTime().Ticks);
+
             EnsureUniqueRowKey(logEventEntity);
+
+            if (_rowKeyFunc != null)
+                _rowKeyFunc(logEventEntity);
+
             _table.Execute(TableOperation.Insert(logEventEntity));
         }
 

@@ -54,6 +54,7 @@ namespace Serilog
 		/// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
 		/// <param name="period">The time to wait between checking for event batches.</param>
 		/// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
+        /// <param name="rowKeyFunc">Function to generate a row key</param>
 		/// <returns>Logger configuration, allowing configuration to continue.</returns>
 		/// <exception cref="ArgumentNullException">A required parameter is null.</exception>
 		public static LoggerConfiguration AzureTableStorageWithProperties(
@@ -65,14 +66,15 @@ namespace Serilog
 			bool writeInBatches = false,
 			TimeSpan? period = null,
 			int? batchPostingLimit = null,
-			string additionalRowKeyPostfix = null)
+            string additionalRowKeyPostfix = null,
+            Func<LogEvent, string, string> rowKeyFunc = null)
 		{
 			if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
 			if (storageAccount == null) throw new ArgumentNullException("storageAccount");
 
 			var sink = writeInBatches ?
-				(ILogEventSink)new AzureBatchingTableStorageWithPropertiesSink(storageAccount, formatProvider, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, additionalRowKeyPostfix) :
-				new AzureTableStorageWithPropertiesSink(storageAccount, formatProvider, storageTableName, additionalRowKeyPostfix);
+				(ILogEventSink)new AzureBatchingTableStorageWithPropertiesSink(storageAccount, formatProvider, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, additionalRowKeyPostfix, rowKeyFunc) :
+				new AzureTableStorageWithPropertiesSink(storageAccount, formatProvider, storageTableName, additionalRowKeyPostfix, rowKeyFunc);
 
 			return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
 		}
@@ -90,6 +92,7 @@ namespace Serilog
 		/// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
 		/// <param name="period">The time to wait between checking for event batches.</param>
 		/// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
+        /// <param name="rowKeyFunc">Function to generate a row key</param>
 		/// <returns>Logger configuration, allowing configuration to continue.</returns>
 		/// <exception cref="ArgumentNullException">A required parameter is null.</exception>
 		public static LoggerConfiguration AzureTableStorageWithProperties(
@@ -101,12 +104,13 @@ namespace Serilog
 			bool writeInBatches = false,
 			TimeSpan? period = null,
 			int? batchPostingLimit = null,
-			string additionalRowKeyPostfix = null)
+            string additionalRowKeyPostfix = null,
+            Func<LogEvent, string, string> rowKeyFunc = null)
 		{
 			if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
 			if (String.IsNullOrEmpty(connectionString)) throw new ArgumentNullException("connectionString");
 			var storageAccount = CloudStorageAccount.Parse(connectionString);
-			return AzureTableStorageWithProperties(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, additionalRowKeyPostfix);
+			return AzureTableStorageWithProperties(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, additionalRowKeyPostfix, rowKeyFunc);
 		}
 	}
 }

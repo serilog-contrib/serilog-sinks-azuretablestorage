@@ -41,13 +41,16 @@ namespace Serilog.Sinks.AzureTableStorage
 		/// <param name="logEvent">The event to log</param>
 		/// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
 		/// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
+        /// <param name="rowKeyFunc">Function to produce a row key</param>
 		/// <returns></returns>
-		public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix)
-		{
+        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix, Func<LogEvent, string, string> rowKeyFunc = null)
+        {
 			var tableEntity = new DynamicTableEntity();
 
 			tableEntity.PartitionKey = GenerateValidPartitionKey(logEvent);
-			tableEntity.RowKey = GenerateValidRowKey(logEvent, additionalRowKeyPostfix);
+
+            var fn = rowKeyFunc ?? GenerateValidRowKey;
+			tableEntity.RowKey = fn(logEvent, additionalRowKeyPostfix);
 			tableEntity.Timestamp = logEvent.Timestamp;
 
 			var dynamicProperties = tableEntity.Properties;
@@ -118,7 +121,7 @@ namespace Serilog.Sinks.AzureTableStorage
 		// Generate a valid Row Key by joining postfix and prefix. If longer
 		// than 1K, prefix is truncated.
 		// See http://msdn.microsoft.com/en-us/library/windowsazure/dd179338.aspx
-		private static string GenerateValidRowKey(LogEvent logEvent, string additionalRowKeyPostfix)
+		internal static string GenerateValidRowKey(LogEvent logEvent, string additionalRowKeyPostfix)
 		{
 			var prefixBuilder = new StringBuilder(512);
 
