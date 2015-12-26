@@ -65,7 +65,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
 		private static EntityProperty SimplifyScalar(object value)
 		{
-			if (value == null) return new EntityProperty(null);
+			if (value == null) return new EntityProperty((byte[])null);
 
 			var valueType = value.GetType();
 
