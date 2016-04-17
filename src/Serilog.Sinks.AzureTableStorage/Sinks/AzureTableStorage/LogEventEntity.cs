@@ -32,7 +32,7 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </remarks>
     public class LogEventEntity : TableEntity
     {
-        static readonly Regex RowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?)");
+        static readonly Regex RowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|[\x00-\x1f]|[\x7f-\x9f])");
 
         /// <summary>
         /// Default constructor for the Storage Client library to re-hydrate entities when querying.
