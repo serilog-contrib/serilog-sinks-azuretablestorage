@@ -8,5 +8,5 @@ deploy:
   api_key:
     secure: nvZ/z+pMS91b3kG4DgfES5AcmwwGoBYQxr9kp4XiJHj25SAlgdIxFx++1N0lFH2x
   on:
-    branch: ^(master|dev)$
+    branch: /^(master|dev)$/
     
