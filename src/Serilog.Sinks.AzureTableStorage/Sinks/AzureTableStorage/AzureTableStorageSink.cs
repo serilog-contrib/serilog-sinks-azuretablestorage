@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Globalization;
 using System.Threading;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -27,6 +28,7 @@ namespace Serilog.Sinks.AzureTableStorage
     public class AzureTableStorageSink : ILogEventSink
     {
         readonly IFormatProvider _formatProvider;
+        private readonly Func<string, long, string> _rowKeyFormatter;
         readonly CloudTable _table;
         long _rowKeyIndex;
 
@@ -36,9 +38,30 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-        public AzureTableStorageSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, string storageTableName = null)
+        public AzureTableStorageSink(
+            CloudStorageAccount storageAccount,
+            IFormatProvider formatProvider,
+            string storageTableName
+            ) :this(storageAccount, formatProvider, storageTableName, DefaultRowKeyFormatter)
+        {
+        }
+
+        /// <summary>
+        /// Construct a sink that saves logs to the specified storage account.
+        /// </summary>
+        /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
+        /// <param name="rowKeyFormatter">formater for the rowkey, func will be paseed th current rowkey and a unique number and should return
+        /// the value of the row key to store</param>
+        public AzureTableStorageSink(
+            CloudStorageAccount storageAccount,
+            IFormatProvider formatProvider,
+            string storageTableName = null,
+            Func<string, long, string> rowKeyFormatter = null)
         {
             _formatProvider = formatProvider;
+            _rowKeyFormatter = rowKeyFormatter ?? DefaultRowKeyFormatter;
             var tableClient = storageAccount.CreateCloudTableClient();
 
             if (string.IsNullOrEmpty(storageTableName))
@@ -72,7 +95,12 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="logEventEntity"></param>
         void EnsureUniqueRowKey(ITableEntity logEventEntity)
         {
-            logEventEntity.RowKey += "|" + Interlocked.Increment(ref _rowKeyIndex);
+            logEventEntity.RowKey = _rowKeyFormatter(logEventEntity.RowKey, Interlocked.Increment(ref _rowKeyIndex));
+        }
+
+        private static string DefaultRowKeyFormatter(string rowKey, long uniqueIndex)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "{0}|{1}", rowKey, uniqueIndex);
         }
     }
 }
