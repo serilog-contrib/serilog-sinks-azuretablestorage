@@ -94,11 +94,15 @@
     <Compile Include="..\..\assets\CommonAssemblyInfo.cs">
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Sinks\AzureTableStorageKeyGenerators\DefaultBatchKeyGenerator.cs" />
+    <Compile Include="Sinks\AzureTableStorageKeyGenerators\DefaultKeyGenerator.cs" />
     <Compile Include="Sinks\AzureTableStorageWithProperties\AzurePropertyFormatter.cs" />
     <Compile Include="Sinks\AzureTableStorage\AzureBatchingTableStorageSink.cs" />
     <Compile Include="Sinks\AzureTableStorageWithProperties\AzureBatchingTableStorageWithPropertiesSink.cs" />
     <Compile Include="Sinks\AzureTableStorage\AzureTableStorageSink.cs" />
     <Compile Include="Sinks\AzureTableStorageWithProperties\AzureTableStorageWithPropertiesSink.cs" />
+    <Compile Include="Sinks\AzureTableStorageKeyGenerators\IBatchKeyGenerator.cs" />
+    <Compile Include="Sinks\AzureTableStorageKeyGenerators\IKeyGenerator.cs" />
     <Compile Include="Sinks\AzureTableStorage\LogEventEntity.cs" />
     <Compile Include="Sinks\AzureTableStorageWithProperties\AzureTableStorageEntityFactory.cs" />
   </ItemGroup>
