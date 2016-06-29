@@ -1,5 +1,5 @@
 ﻿using Microsoft.WindowsAzure.Storage.Table;
-using NUnit.Framework;
+using Xunit;
 using Serilog.Events;
 using Serilog.Parsing;
 using Serilog.Sinks.AzureTableStorage;
@@ -11,10 +11,9 @@ using System.Threading.Tasks;
 
 namespace Serilog.Sinks.AzureTableStorage.Tests
 {
-	[TestFixture]
 	public class AzureTableStorageEntityFactoryTests
 	{
-		[Test]
+		[Fact]
 		public void CreateEntityWithPropertiesShouldGenerateValidEntity()
 		{
 			var timestamp = new DateTimeOffset(2014, 12, 01, 18, 42, 20, 666, TimeSpan.FromHours(2));
@@ -34,32 +33,32 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 
 			// Partition key
 			var expectedPartitionKey = "0" + new DateTime(logEvent.Timestamp.Year, logEvent.Timestamp.Month, logEvent.Timestamp.Day, logEvent.Timestamp.Hour, logEvent.Timestamp.Minute, 0).Ticks;
-			Assert.AreEqual(expectedPartitionKey, entity.PartitionKey);
+			Assert.Equal(expectedPartitionKey, entity.PartitionKey);
 
 			// Row Key
 			var expectedRowKeyWithoutGuid = "Information|Template {Temp} {Prop}|Some postfix|";
 			var rowKeyWithoutGuid = entity.RowKey.Substring(0, expectedRowKeyWithoutGuid.Length);
 			var rowKeyGuid = entity.RowKey.Substring(expectedRowKeyWithoutGuid.Length);
 
-			Assert.AreEqual(expectedRowKeyWithoutGuid, rowKeyWithoutGuid);
-			Assert.DoesNotThrow(() => Guid.Parse(rowKeyGuid));
-			Assert.AreEqual(Guid.Parse(rowKeyGuid).ToString(), rowKeyGuid);
+			Assert.Equal(expectedRowKeyWithoutGuid, rowKeyWithoutGuid);
+		    Guid.Parse(rowKeyGuid);
+			Assert.Equal(Guid.Parse(rowKeyGuid).ToString(), rowKeyGuid);
 
 			// Timestamp
-			Assert.AreEqual(logEvent.Timestamp, entity.Timestamp);
+			Assert.Equal(logEvent.Timestamp, entity.Timestamp);
 
 			// Properties
-			Assert.AreEqual(6, entity.Properties.Count);
+			Assert.Equal(6, entity.Properties.Count);
 
-			Assert.AreEqual(new EntityProperty(messageTemplate), entity.Properties["MessageTemplate"]);
-			Assert.AreEqual(new EntityProperty("Information"), entity.Properties["Level"]);
-			Assert.AreEqual(new EntityProperty("Template \"Temporary\" \"Property\""), entity.Properties["RenderedMessage"]);
-			Assert.AreEqual(new EntityProperty(exception.ToString()), entity.Properties["Exception"]);
-			Assert.AreEqual(new EntityProperty("Temporary"), entity.Properties["Temp"]);
-			Assert.AreEqual(new EntityProperty("Property"), entity.Properties["Prop"]);
+			Assert.Equal(new EntityProperty(messageTemplate), entity.Properties["MessageTemplate"]);
+			Assert.Equal(new EntityProperty("Information"), entity.Properties["Level"]);
+			Assert.Equal(new EntityProperty("Template \"Temporary\" \"Property\""), entity.Properties["RenderedMessage"]);
+			Assert.Equal(new EntityProperty(exception.ToString()), entity.Properties["Exception"]);
+			Assert.Equal(new EntityProperty("Temporary"), entity.Properties["Temp"]);
+			Assert.Equal(new EntityProperty("Property"), entity.Properties["Prop"]);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateEntityWithPropertiesShouldGenerateValidRowKey()
 		{
 			var timestamp = new DateTimeOffset(2014, 12, 01, 18, 42, 20, 666, TimeSpan.FromHours(2));
@@ -85,14 +84,14 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			var rowKeyWithoutGuid = entity.RowKey.Substring(0, expectedRowKeyWithoutGuid.Length);
 			var rowKeyGuid = entity.RowKey.Substring(expectedRowKeyWithoutGuid.Length);
 
-			Assert.AreEqual(1024, entity.RowKey.Length);
-			Assert.AreEqual(expectedRowKeyWithoutGuid, rowKeyWithoutGuid);
-			Assert.DoesNotThrow(() => Guid.Parse(rowKeyGuid));
-			Assert.AreEqual(Guid.Parse(rowKeyGuid).ToString(), rowKeyGuid);
+			Assert.Equal(1024, entity.RowKey.Length);
+			Assert.Equal(expectedRowKeyWithoutGuid, rowKeyWithoutGuid);
+		    Guid.Parse(rowKeyGuid);
+			Assert.Equal(Guid.Parse(rowKeyGuid).ToString(), rowKeyGuid);
 			Assert.False(entity.RowKey.Contains('Z'));
 		}
 
-		[Test]
+		[Fact]
 		public void CreateEntityWithPropertiesShouldSupportAzureTableTypesForScalar()
 		{
 			var messageTemplate = "{ByteArray} {Boolean} {DateTime} {DateTimeOffset} {Double} {Guid} {Int} {Long} {String}";
@@ -124,21 +123,21 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 
 			var entity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, null, null);
 
-			Assert.AreEqual(3 + properties.Count, entity.Properties.Count);
+			Assert.Equal(3 + properties.Count, entity.Properties.Count);
 
-			Assert.IsInstanceOf(typeof(byte[]), entity.Properties["ByteArray"].BinaryValue);
-			Assert.AreEqual(bytearrayValue, entity.Properties["ByteArray"].BinaryValue);
-			Assert.AreEqual(booleanValue, entity.Properties["Boolean"].BooleanValue);
-			Assert.AreEqual(datetimeValue, entity.Properties["DateTime"].DateTime);
-			Assert.AreEqual(datetimeoffsetValue, entity.Properties["DateTimeOffset"].DateTimeOffsetValue);
-			Assert.AreEqual(doubleValue, entity.Properties["Double"].DoubleValue);
-			Assert.AreEqual(guidValue, entity.Properties["Guid"].GuidValue);
-			Assert.AreEqual(intValue, entity.Properties["Int"].Int32Value);
-			Assert.AreEqual(longValue, entity.Properties["Long"].Int64Value);
-			Assert.AreEqual(stringValue, entity.Properties["String"].StringValue);
+			Assert.IsType<byte[]>(entity.Properties["ByteArray"].BinaryValue);
+			Assert.Equal(bytearrayValue, entity.Properties["ByteArray"].BinaryValue);
+			Assert.Equal(booleanValue, entity.Properties["Boolean"].BooleanValue);
+			Assert.Equal(datetimeValue, entity.Properties["DateTime"].DateTime);
+			Assert.Equal(datetimeoffsetValue, entity.Properties["DateTimeOffset"].DateTimeOffsetValue);
+			Assert.Equal(doubleValue, entity.Properties["Double"].DoubleValue);
+			Assert.Equal(guidValue, entity.Properties["Guid"].GuidValue);
+			Assert.Equal(intValue, entity.Properties["Int"].Int32Value);
+			Assert.Equal(longValue, entity.Properties["Long"].Int64Value);
+			Assert.Equal(stringValue, entity.Properties["String"].StringValue);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateEntityWithPropertiesShouldSupportAzureTableTypesForDictionary()
 		{
 			var messageTemplate = "{Dictionary}";
@@ -160,9 +159,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 				 new KeyValuePair<ScalarValue, LogEventPropertyValue>(new ScalarValue("d2"), dict2),
 				 new KeyValuePair<ScalarValue, LogEventPropertyValue>(new ScalarValue("d0"), new ScalarValue(0))
 			});
-
-
-
+            
 			var properties = new List<LogEventProperty> {
 				new LogEventProperty("Dictionary", dict0)
 			};
@@ -173,11 +170,11 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 
 			var entity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, null, null);
 
-			Assert.AreEqual(3 + properties.Count, entity.Properties.Count);
-			Assert.AreEqual("[(\"d1\": [(\"d1k1\": \"d1k1v1\"), (\"d1k2\": \"d1k2v2\"), (\"d1k3\": \"d1k3v3\")]), (\"d2\": [(\"d2k1\": \"d2k1v1\"), (\"d2k2\": \"d2k2v2\"), (\"d2k3\": \"d2k3v3\")]), (\"d0\": 0)]", entity.Properties["Dictionary"].StringValue);
+			Assert.Equal(3 + properties.Count, entity.Properties.Count);
+			Assert.Equal("[(\"d1\": [(\"d1k1\": \"d1k1v1\"), (\"d1k2\": \"d1k2v2\"), (\"d1k3\": \"d1k3v3\")]), (\"d2\": [(\"d2k1\": \"d2k1v1\"), (\"d2k2\": \"d2k2v2\"), (\"d2k3\": \"d2k3v3\")]), (\"d0\": 0)]", entity.Properties["Dictionary"].StringValue);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateEntityWithPropertiesShouldSupportAzureTableTypesForSequence()
 		{
 			var messageTemplate = "{Sequence}";
@@ -216,11 +213,11 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 
 			var entity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, null, null);
 
-			Assert.AreEqual(3 + properties.Count, entity.Properties.Count);
-			Assert.AreEqual("[[1, 2, 3, 4, 5], [\"a\", \"b\", \"c\", \"d\", \"e\"]]", entity.Properties["Sequence"].StringValue);
+			Assert.Equal(3 + properties.Count, entity.Properties.Count);
+			Assert.Equal("[[1, 2, 3, 4, 5], [\"a\", \"b\", \"c\", \"d\", \"e\"]]", entity.Properties["Sequence"].StringValue);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateEntityWithPropertiesShouldNotAddMoreThan252Properties()
 		{
 			var messageTemplate = string.Empty;
@@ -241,7 +238,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 
 			var entity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, null, null);
 
-			Assert.AreEqual(252, entity.Properties.Count);
+			Assert.Equal(252, entity.Properties.Count);
 			Assert.Contains("AggregatedProperties", entity.Properties.Keys.ToList());
 		}
 	}
