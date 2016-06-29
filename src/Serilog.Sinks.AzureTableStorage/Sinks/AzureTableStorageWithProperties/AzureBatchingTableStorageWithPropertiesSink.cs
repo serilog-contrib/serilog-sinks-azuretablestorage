@@ -33,7 +33,8 @@ namespace Serilog.Sinks.AzureTableStorage
 		private readonly IFormatProvider _formatProvider;
 		private readonly CloudTable _table;
 		private readonly string _additionalRowKeyPostfix;
-		private const int _maxAzureOperationsPerBatch = 100;
+        private const int _maxAzureOperationsPerBatch = 100;
+        private Func<LogEvent, string, string> _rowKeyFunc = AzureTableStorageEntityFactory.GenerateValidRowKey;
 
 		/// <summary>
 		/// Construct a sink that saves logs to the specified storage account.
@@ -44,10 +45,11 @@ namespace Serilog.Sinks.AzureTableStorage
 		/// <param name="period"></param>
 		/// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
 		/// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
-		public AzureBatchingTableStorageWithPropertiesSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, int batchSizeLimit, TimeSpan period, string storageTableName = null, string additionalRowKeyPostfix = null)
+        /// <param name="rowKeyFunc">Function to produce a row key</param>
+        public AzureBatchingTableStorageWithPropertiesSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, int batchSizeLimit, TimeSpan period, string storageTableName = null, string additionalRowKeyPostfix = null, Func<LogEvent, string, string> rowKeyFunc = null)
 			: base(batchSizeLimit, period)
-		{
-			var tableClient = storageAccount.CreateCloudTableClient();
+        {            
+            var tableClient = storageAccount.CreateCloudTableClient();
 
 			if (string.IsNullOrEmpty(storageTableName))
 			{
@@ -63,6 +65,8 @@ namespace Serilog.Sinks.AzureTableStorage
 			{
 				_additionalRowKeyPostfix = AzureTableStorageEntityFactory.GetValidStringForTableKey(additionalRowKeyPostfix);
 			}
+
+            _rowKeyFunc = rowKeyFunc ?? _rowKeyFunc;
 		}
 
 		/// <summary>
@@ -79,7 +83,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
 			foreach (var logEvent in events)
 			{
-				var tableEntity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix);
+				var tableEntity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _rowKeyFunc);
 
 				// If partition changed, store the new and force an execution
 				if (lastPartitionKey != tableEntity.PartitionKey)

@@ -32,6 +32,8 @@ namespace Serilog.Sinks.AzureTableStorage
         long _partitionKey;
         int _batchRowId;
 
+        private Func<LogEventEntity, string, int, string> _rowKeyFunc = LogEventEntity.GetValidRowKey;
+
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
         /// </summary>
@@ -40,7 +42,8 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-        public AzureBatchingTableStorageSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, int batchSizeLimit, TimeSpan period, string storageTableName = null)
+        /// <param name="rowKeyFunc">Provides a method to extend the row key</param>
+        public AzureBatchingTableStorageSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, int batchSizeLimit, TimeSpan period, string storageTableName = null, Func<LogEventEntity, string, int, string> rowKeyFunc = null)
             :base(batchSizeLimit, period)
         {
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
@@ -52,6 +55,8 @@ namespace Serilog.Sinks.AzureTableStorage
 
             _table = tableClient.GetTableReference(storageTableName);
             _table.CreateIfNotExists();
+
+            _rowKeyFunc = rowKeyFunc ?? _rowKeyFunc;
         }
 
         /// <summary>
@@ -81,7 +86,12 @@ namespace Serilog.Sinks.AzureTableStorage
                 }
 
                 var logEventEntity = new LogEventEntity(logEvent, _formatProvider, _partitionKey);
-                logEventEntity.RowKey += "|" + _batchRowId;
+                
+                if (_rowKeyFunc != null)
+                    logEventEntity.RowKey = _rowKeyFunc(logEventEntity, logEventEntity.RowKey, _batchRowId);
+                else
+                    logEventEntity.RowKey += "|" + _batchRowId;
+
                 operation.Add(TableOperation.Insert(logEventEntity));
 
                 _batchRowId++;

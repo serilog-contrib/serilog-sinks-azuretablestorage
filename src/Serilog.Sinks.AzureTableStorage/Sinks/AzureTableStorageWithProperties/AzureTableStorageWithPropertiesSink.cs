@@ -32,7 +32,8 @@ namespace Serilog.Sinks.AzureTableStorage
 	{
 		private readonly IFormatProvider _formatProvider;
 		private readonly CloudTable _table;
-		private readonly string _additionalRowKeyPostfix;
+        private readonly string _additionalRowKeyPostfix;
+        private Func<LogEvent, string, string> _rowKeyFunc = AzureTableStorageEntityFactory.GenerateValidRowKey;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -41,7 +42,8 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
 		/// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
-		public AzureTableStorageWithPropertiesSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, string storageTableName = null, string additionalRowKeyPostfix = null)
+        /// <param name="rowKeyFunc">Function to produce a row key</param>
+        public AzureTableStorageWithPropertiesSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, string storageTableName = null, string additionalRowKeyPostfix = null, Func<LogEvent, string, string> rowKeyFunc = null)
         {
 			var tableClient = storageAccount.CreateCloudTableClient();
 
@@ -59,6 +61,8 @@ namespace Serilog.Sinks.AzureTableStorage
 			{
 				_additionalRowKeyPostfix = AzureTableStorageEntityFactory.GetValidStringForTableKey(additionalRowKeyPostfix);
 			}
+
+            _rowKeyFunc = rowKeyFunc ?? _rowKeyFunc;
 		}
 
 		/// <summary>
@@ -67,7 +71,7 @@ namespace Serilog.Sinks.AzureTableStorage
 		/// <param name="logEvent">The log event to write.</param>
 		public void Emit(LogEvent logEvent)
 		{
-			_table.Execute(TableOperation.Insert(AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix)));
+			_table.Execute(TableOperation.Insert(AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _rowKeyFunc)));
 		}
 	}
 }
