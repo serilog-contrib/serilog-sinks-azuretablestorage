@@ -12,24 +12,42 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 	public static class AzureStorageEmulatorManager
 	{
 		private const string _windowsAzureStorageEmulatorPath = @"C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator\WAStorageEmulator.exe";
-		private const string _win7ProcessName = "WAStorageEmulator";
+        
+        private const string _win7ProcessName = "WAStorageEmulator";
 		private const string _win8ProcessName = "WASTOR~1";
 
-		private static readonly ProcessStartInfo startStorageEmulator = new ProcessStartInfo
-		{
-			FileName = _windowsAzureStorageEmulatorPath,
-			Arguments = "start",
-		};
+        private const string _azureStorageEmulator4_4Path = @"C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe";
+        private const string _processName4_4 = "AzureStorageEmulator";
 
-		private static readonly ProcessStartInfo stopStorageEmulator = new ProcessStartInfo
+        private static readonly ProcessStartInfo startStorageEmulator = new ProcessStartInfo
+        {
+            FileName = _windowsAzureStorageEmulatorPath,
+            Arguments = "start",
+        };
+
+        private static readonly ProcessStartInfo startStorageEmulator4_4 = new ProcessStartInfo
+        {
+            FileName = _azureStorageEmulator4_4Path,
+            Arguments = "start",
+        };
+
+        private static readonly ProcessStartInfo stopStorageEmulator = new ProcessStartInfo
 		{
 			FileName = _windowsAzureStorageEmulatorPath,
 			Arguments = "stop",
 		};
 
-		private static Process GetProcess()
+        private static readonly ProcessStartInfo stopStorageEmulator4_4 = new ProcessStartInfo
+        {
+            FileName = _azureStorageEmulator4_4Path,
+            Arguments = "stop",
+        };
+
+        private static Process GetProcess()
 		{
-			return Process.GetProcessesByName(_win7ProcessName).FirstOrDefault() ?? Process.GetProcessesByName(_win8ProcessName).FirstOrDefault();
+			return Process.GetProcessesByName(_win7ProcessName).FirstOrDefault()
+                ?? Process.GetProcessesByName(_win8ProcessName).FirstOrDefault()
+                ?? Process.GetProcessesByName(_processName4_4).FirstOrDefault();
 		}
 
 		public static bool IsProcessStarted()
@@ -41,19 +59,53 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 		{
 			if (!IsProcessStarted())
 			{
-				using (Process process = Process.Start(startStorageEmulator))
-				{
-					process.WaitForExit();
-				}
-			}
+                try
+                {
+                    using (Process process = Process.Start(startStorageEmulator4_4))
+                    {
+                        process.WaitForExit();
+                    }
+                }
+                catch(System.ComponentModel.Win32Exception ex)
+                {
+                    if (ex.Message == "The system cannot find the file specified")
+                    {
+                        using (Process process = Process.Start(startStorageEmulator))
+                        {
+                            process.WaitForExit();
+                        }
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
 		}
 
 		public static void StopStorageEmulator()
 		{
-			using (Process process = Process.Start(stopStorageEmulator))
-			{
-				process.WaitForExit();
-			}
-		}
-	}
+            try
+            {
+                using (Process process = Process.Start(stopStorageEmulator4_4))
+                {
+                    process.WaitForExit();
+                }
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                if (ex.Message == "The system cannot find the file specified")
+                {
+                    using (Process process = Process.Start(stopStorageEmulator))
+                    {
+                        process.WaitForExit();
+                    }
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+    }
 }
