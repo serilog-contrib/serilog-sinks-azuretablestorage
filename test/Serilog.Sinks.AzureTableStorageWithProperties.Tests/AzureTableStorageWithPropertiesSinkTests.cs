@@ -41,7 +41,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             }
         }
 
-        [Fact(Skip = "Requires storage emulator")]
+        [Fact]
 		public void WhenALoggerWritesToTheSinkItIsRetrievableFromTheTableWithProperties()
 		{
 			var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
@@ -74,7 +74,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			Assert.Equal(" ", result.Properties["Space"].PropertyAsObject);
 		}
 
-        [Fact(Skip = "Requires storage emulator")]
+        [Fact]
         public void WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForScalar()
 		{
 			var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
@@ -121,7 +121,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			Assert.Equal(stringValue, result.Properties["String"].StringValue);
 		}
 
-        [Fact(Skip = "Requires storage emulator")]
+        [Fact]
         public void WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForDictionary()
 		{
 			var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
@@ -157,7 +157,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			Assert.Equal("[(\"d1\": [(\"d1k1\": \"d1k1v1\"), (\"d1k2\": \"d1k2v2\"), (\"d1k3\": \"d1k3v3\")]), (\"d2\": [(\"d2k1\": \"d2k1v1\"), (\"d2k2\": \"d2k2v2\"), (\"d2k3\": \"d2k3v3\")])]", result.Properties["Dictionary"].StringValue);
 		}
 
-        [Fact(Skip = "Requires storage emulator")]
+        [Fact]
         public void WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForSequence()
 		{
 			var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
@@ -198,7 +198,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			public Struct2 Struct2Val { get; set; }
 		}
 
-        [Fact(Skip = "Requires storage emulator")]
+        [Fact]
         public void WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForStructure()
 		{
 			var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
@@ -235,7 +235,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			Assert.Equal("Struct0 { Struct1Val: Struct1 { IntVal: 10, StringVal: \"ABCDE\" }, Struct2Val: Struct2 { DateTimeVal: 12/03/2014 17:37:12, DoubleVal: 3.14159265358979 } }", result.Properties["Struct0"].StringValue);
 		}
 
-        [Fact(Skip = "Requires storage emulator")]
+        [Fact]
         public void WhenABatchLoggerWritesToTheSinkItStoresAllTheEntries()
 		{
 			var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
@@ -260,7 +260,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			Assert.Equal(10, result.Count());
 		}
 
-        [Fact(Skip = "Requires storage emulator")]
+        [Fact]
         public void WhenABatchLoggerWritesToTheSinkItStoresAllTheEntriesInDifferentPartitions()
 		{
 			var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
@@ -289,7 +289,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			Assert.Equal(8, result.Count());
 		}
 
-        [Fact(Skip = "Requires storage emulator")]
+        [Fact]
         public void WhenABatchLoggerWritesToTheSinkItStoresAllTheEntriesInLargeNumber()
 		{
 			var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
