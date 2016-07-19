@@ -1,0 +1,20 @@
+{
+  "testRunner": "xunit",
+
+  "dependencies": {
+    "Serilog.Sinks.AzureTableStorage": { "target": "project" },
+    "xunit": "2.2.0-*",
+    "dotnet-test-xunit": "2.2.0-preview2-build1029"
+  },
+
+  "buildOptions": {
+    "keyFile": "../../assets/Serilog.snk"
+  },
+  "frameworks": {
+    "net4.5.2": {
+      "buildOptions": {
+        "define": [ "APPDOMAIN", "REMOTING", "GETCURRENTMETHOD" ]
+      }
+    }
+  }
+}
