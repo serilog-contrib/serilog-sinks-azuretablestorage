@@ -4,7 +4,7 @@
   "dependencies": {
     "Serilog.Sinks.AzureTableStorage": { "target": "project" },
     "xunit": "2.2.0-*",
-    "dotnet-test-xunit": "2.2.0-preview2-build1029"
+    "dotnet-test-xunit": "2.2.0-*"
   },
 
   "buildOptions": {
@@ -12,9 +12,18 @@
   },
   "frameworks": {
     "net4.5.2": {
-      "buildOptions": {
-        "define": [ "APPDOMAIN", "REMOTING", "GETCURRENTMETHOD" ]
+
+    },
+    "netcoreapp1.0": {
+      "imports": [
+        "portable-net45+win8+wp8+wpa81"
+      ],
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        }
       }
-    }
+    } 
   }
 }

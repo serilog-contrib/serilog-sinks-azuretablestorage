@@ -11,17 +11,32 @@
     },
     "dependencies": {
         "Serilog": "2.0.0",
-        "Serilog.Sinks.PeriodicBatching": "2.0.0",
-        "WindowsAzure.Storage": "4.3.0"
+        "Serilog.Sinks.PeriodicBatching": "2.0.0"
     },
     "buildOptions": {
         "keyFile": "../../assets/Serilog.snk"
     },
     "frameworks": {
-        "net4.5": {
-            "frameworkAssemblies": {
-                "System.Configuration": ""
-            }
+      "net4.5": {
+        "dependencies": {
+          "WindowsAzure.Storage": "4.3.0"
+        },
+        "frameworkAssemblies": {
+          "System.Configuration": ""
         }
+      },
+      "netstandard1.3": {
+        "buildOptions": {
+          "define": [
+            "WINDOWS_AZURE_STORAGE_ASYNC_ONLY_APIS"
+          ]
+        },
+        "dependencies": {
+          "WindowsAzure.Storage": "7.2.0"
+        },
+        "imports": [
+          "portable-net45+win8+wp8+wpa81"
+        ]
+      } 
     }
 }

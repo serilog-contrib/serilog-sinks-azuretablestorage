@@ -6,8 +6,6 @@ using Serilog.Parsing;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using Serilog.Formatting.Json;
-using System.IO;
 
 namespace Serilog.Sinks.AzureTableStorage.Tests
 {
@@ -40,6 +38,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
                 // Leave as it was before testing...
             }
         }
+        
+	    static IList<DynamicTableEntity> TableQueryTakeDynamic(CloudTable table, int takeCount)
+	    {
+            var queryToken = new TableContinuationToken();
+            var executeTask = table.ExecuteQuerySegmentedAsync(new TableQuery().Take(takeCount), queryToken);
+	        return executeTask.Result.Results;
+	    }
+
+	    const int WaitTimeoutMilliseconds = 2000;
 
         [Fact]
 		public void WhenALoggerWritesToTheSinkItIsRetrievableFromTheTableWithProperties()
@@ -48,7 +55,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			var tableClient = storageAccount.CreateCloudTableClient();
 			var table = tableClient.GetTableReference("LogEventEntity");
 
-			table.DeleteIfExists();
+			table.DeleteIfExistsAsync().Wait(WaitTimeoutMilliseconds);
 
 			var logger = new LoggerConfiguration()
 				.WriteTo.AzureTableStorageWithProperties(storageAccount)
@@ -60,8 +67,8 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 
 			logger.Information(exception, messageTemplate, "Properties", 1234, ' ');
 
-			var result = table.ExecuteQuery(new TableQuery().Take(1)).First();
-			
+		    var result = TableQueryTakeDynamic(table, takeCount: 1).First();
+            
 			// Check the presence of same properties as in previous version
 			Assert.Equal(messageTemplate, result.Properties["MessageTemplate"].StringValue);
 			Assert.Equal("Information", result.Properties["Level"].StringValue);
@@ -81,7 +88,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			var tableClient = storageAccount.CreateCloudTableClient();
 			var table = tableClient.GetTableReference("LogEventEntity");
 
-			table.DeleteIfExists();
+			table.DeleteIfExistsAsync().Wait(WaitTimeoutMilliseconds);
 
 			var logger = new LoggerConfiguration()
 				.WriteTo.AzureTableStorageWithProperties(storageAccount)
@@ -108,11 +115,11 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 				longValue,
 				stringValue);
 
-			var result = table.ExecuteQuery(new TableQuery().Take(1)).First();
+            var result = TableQueryTakeDynamic(table, takeCount: 1).First();
 
-			Assert.Equal(bytearrayValue, result.Properties["ByteArray"].BinaryValue);
+            Assert.Equal(bytearrayValue, result.Properties["ByteArray"].BinaryValue);
 			Assert.Equal(booleanValue, result.Properties["Boolean"].BooleanValue);
-			// Assert.Equal(datetimeValue, result.Properties["DateTime"].DateTime);
+			Assert.Equal(datetimeValue, result.Properties["DateTime"].DateTime);
 			Assert.Equal(datetimeoffsetValue, result.Properties["DateTimeOffset"].DateTimeOffsetValue);
 			Assert.Equal(doubleValue, result.Properties["Double"].DoubleValue);
 			Assert.Equal(guidValue, result.Properties["Guid"].GuidValue);
@@ -128,7 +135,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			var tableClient = storageAccount.CreateCloudTableClient();
 			var table = tableClient.GetTableReference("LogEventEntity");
 
-			table.DeleteIfExists();
+			table.DeleteIfExistsAsync().Wait(WaitTimeoutMilliseconds);
 
 			var logger = new LoggerConfiguration()
 				.WriteTo.AzureTableStorageWithProperties(storageAccount)
@@ -152,9 +159,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			};
 
 			logger.Information("{Dictionary}", dict0);
-			var result = table.ExecuteQuery(new TableQuery().Take(1)).First();
+            var result = TableQueryTakeDynamic(table, takeCount: 1).First();
 
-			Assert.Equal("[(\"d1\": [(\"d1k1\": \"d1k1v1\"), (\"d1k2\": \"d1k2v2\"), (\"d1k3\": \"d1k3v3\")]), (\"d2\": [(\"d2k1\": \"d2k1v1\"), (\"d2k2\": \"d2k2v2\"), (\"d2k3\": \"d2k3v3\")])]", result.Properties["Dictionary"].StringValue);
+            Assert.Equal("[(\"d1\": [(\"d1k1\": \"d1k1v1\"), (\"d1k2\": \"d1k2v2\"), (\"d1k3\": \"d1k3v3\")]), (\"d2\": [(\"d2k1\": \"d2k1v1\"), (\"d2k2\": \"d2k2v2\"), (\"d2k3\": \"d2k3v3\")])]", result.Properties["Dictionary"].StringValue);
 		}
 
         [Fact]
@@ -164,7 +171,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			var tableClient = storageAccount.CreateCloudTableClient();
 			var table = tableClient.GetTableReference("LogEventEntity");
 
-			table.DeleteIfExists();
+			table.DeleteIfExistsAsync().Wait(WaitTimeoutMilliseconds);
 
 			var logger = new LoggerConfiguration()
 				.WriteTo.AzureTableStorageWithProperties(storageAccount)
@@ -174,9 +181,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			var seq2 = new string[] { "a", "b", "c", "d", "e" };
 
 			logger.Information("{Seq1} {Seq2}", seq1, seq2);
-			var result = table.ExecuteQuery(new TableQuery().Take(1)).First();
+            var result = TableQueryTakeDynamic(table, takeCount: 1).First();
 
-			Assert.Equal("[1, 2, 3, 4, 5]", result.Properties["Seq1"].StringValue);
+            Assert.Equal("[1, 2, 3, 4, 5]", result.Properties["Seq1"].StringValue);
 			Assert.Equal("[\"a\", \"b\", \"c\", \"d\", \"e\"]", result.Properties["Seq2"].StringValue);
 		}
 
@@ -205,7 +212,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			var tableClient = storageAccount.CreateCloudTableClient();
 			var table = tableClient.GetTableReference("LogEventEntity");
 
-			table.DeleteIfExists();
+			table.DeleteIfExistsAsync().Wait(WaitTimeoutMilliseconds);
 
 			var logger = new LoggerConfiguration()
 				.WriteTo.AzureTableStorageWithProperties(storageAccount)
@@ -230,9 +237,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			};
 
 			logger.Information("{@Struct0}", struct0);
-			var result = table.ExecuteQuery(new TableQuery().Take(1)).First();
+            var result = TableQueryTakeDynamic(table, takeCount: 1).First();
 
-			Assert.Equal("Struct0 { Struct1Val: Struct1 { IntVal: 10, StringVal: \"ABCDE\" }, Struct2Val: Struct2 { DateTimeVal: 12/03/2014 17:37:12, DoubleVal: 3.14159265358979 } }", result.Properties["Struct0"].StringValue);
+            Assert.Equal("Struct0 { Struct1Val: Struct1 { IntVal: 10, StringVal: \"ABCDE\" }, Struct2Val: Struct2 { DateTimeVal: 12/03/2014 17:37:12, DoubleVal: 3.14159265358979 } }", result.Properties["Struct0"].StringValue);
 		}
 
         [Fact]
@@ -242,7 +249,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			var tableClient = storageAccount.CreateCloudTableClient();
 			var table = tableClient.GetTableReference("LogEventEntity");
 
-			table.DeleteIfExists();
+			table.DeleteIfExistsAsync().Wait(WaitTimeoutMilliseconds);
 
 			using(var sink = new AzureBatchingTableStorageWithPropertiesSink(storageAccount, null, 1000, TimeSpan.FromMinutes(1)))
 			{
@@ -256,8 +263,8 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 				}
 			}
 
-			var result = table.ExecuteQuery(new TableQuery());
-			Assert.Equal(10, result.Count());
+            var result = TableQueryTakeDynamic(table, takeCount: 11);
+            Assert.Equal(10, result.Count);
 		}
 
         [Fact]
@@ -267,7 +274,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			var tableClient = storageAccount.CreateCloudTableClient();
 			var table = tableClient.GetTableReference("LogEventEntity");
 
-			table.DeleteIfExists();
+			table.DeleteIfExistsAsync().Wait(WaitTimeoutMilliseconds);
 
 			using (var sink = new AzureBatchingTableStorageWithPropertiesSink(storageAccount, null, 1000, TimeSpan.FromMinutes(1)))
 			{
@@ -285,8 +292,8 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 				}
 			}
 
-			var result = table.ExecuteQuery(new TableQuery());
-			Assert.Equal(8, result.Count());
+            var result = TableQueryTakeDynamic(table, takeCount: 9);
+            Assert.Equal(8, result.Count);
 		}
 
         [Fact]
@@ -296,7 +303,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			var tableClient = storageAccount.CreateCloudTableClient();
 			var table = tableClient.GetTableReference("LogEventEntity");
 
-			table.DeleteIfExists();
+			table.DeleteIfExistsAsync().Wait(WaitTimeoutMilliseconds);
 
 			using (var sink = new AzureBatchingTableStorageWithPropertiesSink(storageAccount, null, 1000, TimeSpan.FromMinutes(1)))
 			{
@@ -310,8 +317,8 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 				}
 			}
 
-			var result = table.ExecuteQuery(new TableQuery());
-			Assert.Equal(300, result.Count());
+            var result = TableQueryTakeDynamic(table, takeCount: 301);
+            Assert.Equal(300, result.Count);
 		}
 
     }

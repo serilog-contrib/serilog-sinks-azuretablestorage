@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
@@ -26,6 +27,7 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureBatchingTableStorageSink : PeriodicBatchingSink
     {
+        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
         readonly CloudTable _table;
 
@@ -51,7 +53,7 @@ namespace Serilog.Sinks.AzureTableStorage
             if (string.IsNullOrEmpty(storageTableName)) storageTableName = typeof(LogEventEntity).Name;
 
             _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExists();
+            _table.CreateIfNotExistsAsync().Wait(_waitTimeoutMilliseconds);
         }
 
         /// <summary>
@@ -86,7 +88,9 @@ namespace Serilog.Sinks.AzureTableStorage
 
                 _batchRowId++;
             }
-            _table.ExecuteBatch(operation);
+
+            _table.ExecuteBatchAsync(operation)
+                .Wait(_waitTimeoutMilliseconds);
         }
 
     }
