@@ -19,6 +19,7 @@ using Serilog.Sinks.PeriodicBatching;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -63,13 +64,7 @@ namespace Serilog.Sinks.AzureTableStorage
 			}
 		}
 
-		/// <summary>
-		/// Emit a batch of log events, running to completion synchronously.
-		/// </summary>
-		/// <param name="events">The events to emit.</param>
-		/// <remarks>Override either <see cref="PeriodicBatchingSink.EmitBatch"/> or <see cref="PeriodicBatchingSink.EmitBatchAsync"/>,
-		/// not both.</remarks>
-		protected override void EmitBatch(IEnumerable<LogEvent> events)
+		protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
 		{
 			string lastPartitionKey = null;
 			TableBatchOperation operation = null;
@@ -94,8 +89,7 @@ namespace Serilog.Sinks.AzureTableStorage
 					// If there is an operation currently in use, execute it
 					if (operation != null)
 					{
-						_table.ExecuteBatchAsync(operation)
-                            .Wait(_waitTimeoutMilliseconds);
+						await _table.ExecuteBatchAsync(operation);
 					}
 
 					// Create a new batch operation and zero count
@@ -110,8 +104,7 @@ namespace Serilog.Sinks.AzureTableStorage
 			}
 
 			// Execute last batch
-			_table.ExecuteBatchAsync(operation)
-                .Wait(_waitTimeoutMilliseconds);
+		    await _table.ExecuteBatchAsync(operation);
 		}
 	}
 }
