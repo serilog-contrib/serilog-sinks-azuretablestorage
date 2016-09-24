@@ -61,7 +61,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 			logger.Information(exception, messageTemplate, "Properties", 1234, ' ');
 
 			var result = table.ExecuteQuery(new TableQuery().Take(1)).First();
-			
+
 			// Check the presence of same properties as in previous version
 			Assert.Equal(messageTemplate, result.Properties["MessageTemplate"].StringValue);
 			Assert.Equal("Information", result.Properties["Level"].StringValue);
@@ -88,11 +88,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
                 .WriteTo.AzureTableStorageWithProperties(storageAccount)
                 .CreateLogger();
 
-            var exception = new ArgumentException("Some exception");
-
             const string messageTemplate = "Line 1\nLine2";
 
-            logger.Information(exception, messageTemplate);
+            logger.Information(messageTemplate);
 
             var result = table.ExecuteQuery(new TableQuery().Take(1)).FirstOrDefault();
 
