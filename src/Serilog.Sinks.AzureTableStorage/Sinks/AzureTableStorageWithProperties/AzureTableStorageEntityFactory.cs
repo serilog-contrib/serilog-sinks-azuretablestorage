@@ -27,9 +27,6 @@ namespace Serilog.Sinks.AzureTableStorage
 	/// </summary>
 	public static class AzureTableStorageEntityFactory
 	{
-		// Valid RowKey name characters
-		static readonly Regex _rowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\n|\r|\?)");
-
 		// Azure tables support a maximum of 255 properties. PartitionKey, RowKey and Timestamp
 		// bring the maximum to 252.
 		const int _maxNumberOfPropertiesPerRow = 252;
@@ -99,7 +96,7 @@ namespace Serilog.Sinks.AzureTableStorage
 		/// </returns>
 		public static string GetValidStringForTableKey(string s)
 		{
-			return _rowKeyNotAllowedMatch.Replace(s, "");
+            return ObjectNaming.KeyFieldValueCharactersNotAllowedMatch.Replace(s, "");
 		}
 
 		// Generate a valid partition key from event timestamp.
@@ -133,7 +130,7 @@ namespace Serilog.Sinks.AzureTableStorage
 				postfixBuilder.Append('|').Append(additionalRowKeyPostfix);
 			}
 
-			// Append GUID to postfix	
+			// Append GUID to postfix
 			postfixBuilder.Append('|').Append(Guid.NewGuid());
 
 			// Truncate prefix if too long
