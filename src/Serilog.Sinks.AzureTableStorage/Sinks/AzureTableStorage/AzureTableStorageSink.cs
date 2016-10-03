@@ -48,7 +48,7 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExistsAsync().Wait(_waitTimeoutMilliseconds);
+            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
 
         /// <summary>
@@ -62,8 +62,9 @@ namespace Serilog.Sinks.AzureTableStorage
                 _formatProvider,
                 logEvent.Timestamp.ToUniversalTime().Ticks);
             EnsureUniqueRowKey(logEventEntity);
+
             _table.ExecuteAsync(TableOperation.Insert(logEventEntity))
-                .Wait(_waitTimeoutMilliseconds);
+                .SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
 
         /// <summary>

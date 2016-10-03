@@ -54,7 +54,7 @@ namespace Serilog.Sinks.AzureTableStorage
 			}
 
 			_table = tableClient.GetTableReference(storageTableName);
-			_table.CreateIfNotExistsAsync().Wait(_waitTimeoutMilliseconds);
+			_table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
 
 			_formatProvider = formatProvider;
 

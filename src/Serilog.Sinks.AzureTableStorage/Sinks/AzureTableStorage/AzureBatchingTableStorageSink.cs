@@ -54,7 +54,7 @@ namespace Serilog.Sinks.AzureTableStorage
             if (string.IsNullOrEmpty(storageTableName)) storageTableName = typeof(LogEventEntity).Name;
 
             _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExistsAsync().Wait(_waitTimeoutMilliseconds);
+            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
 
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
