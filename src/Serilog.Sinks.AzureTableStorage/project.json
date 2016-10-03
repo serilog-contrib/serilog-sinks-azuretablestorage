@@ -1,32 +1,31 @@
 ﻿{
-    "version": "3.0.0-*",
-    "description": "Serilog event sink that writes to Azure Table Storage over HTTP.",
-    
-    "authors": [ "Robert Moore" ],
-    "packOptions": {
-        "tags": [ "serilog", "logging", "azure" ],
-        "projectUrl": "https://github.com/serilog/serilog-sinks-azuretablestorage",
-        "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
-        "iconUrl": "http://serilog.net/images/serilog-sink-nuget.png"
+  "version": "3.0.0-*",
+  "description": "Serilog event sink that writes to Azure Table Storage over HTTP.",
+  "authors": [ "Robert Moore" ],
+  "packOptions": {
+    "tags": [ "serilog", "logging", "azure" ],
+    "projectUrl": "https://github.com/serilog/serilog-sinks-azuretablestorage",
+    "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
+    "iconUrl": "http://serilog.net/images/serilog-sink-nuget.png"
+  },
+  "dependencies": {
+    "Serilog": "2.0.0",
+    "Serilog.Sinks.PeriodicBatching": "2.0.0",
+    "WindowsAzure.Storage": "7.2.0"
+  },
+  "buildOptions": {
+    "keyFile": "../../assets/Serilog.snk"
+  },
+  "frameworks": {
+    "net4.5": {
+      "frameworkAssemblies": {
+        "System.Configuration": ""
+      }
     },
-    "dependencies": {
-        "Serilog": "2.0.0",
-        "Serilog.Sinks.PeriodicBatching": "2.0.0",
-        "WindowsAzure.Storage": "7.2.0"
-    },
-    "buildOptions": {
-        "keyFile": "../../assets/Serilog.snk"
-    },
-    "frameworks": {
-      "net4.5": {
-        "frameworkAssemblies": {
-          "System.Configuration": ""
-        }
-      },
-      "netstandard1.3": {
-        "imports": [
-          "portable-net45+win8+wp8+wpa81"
-        ]
-      } 
+    "netstandard1.3": {
+      "imports": [
+        "portable-net45+win8+wp8+wpa81"
+      ]
     }
+  }
 }
