@@ -14,13 +14,11 @@
 
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
-using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.PeriodicBatching;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Serilog.Sinks.AzureTableStorage
@@ -30,6 +28,7 @@ namespace Serilog.Sinks.AzureTableStorage
 	/// </summary>
 	public class AzureBatchingTableStorageWithPropertiesSink : PeriodicBatchingSink
 	{
+	    private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
 		private readonly IFormatProvider _formatProvider;
 		private readonly CloudTable _table;
 		private readonly string _additionalRowKeyPostfix;
@@ -55,7 +54,7 @@ namespace Serilog.Sinks.AzureTableStorage
 			}
 
 			_table = tableClient.GetTableReference(storageTableName);
-			_table.CreateIfNotExists();
+			_table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
 
 			_formatProvider = formatProvider;
 
@@ -65,13 +64,7 @@ namespace Serilog.Sinks.AzureTableStorage
 			}
 		}
 
-		/// <summary>
-		/// Emit a batch of log events, running to completion synchronously.
-		/// </summary>
-		/// <param name="events">The events to emit.</param>
-		/// <remarks>Override either <see cref="PeriodicBatchingSink.EmitBatch"/> or <see cref="PeriodicBatchingSink.EmitBatchAsync"/>,
-		/// not both.</remarks>
-		protected override void EmitBatch(IEnumerable<LogEvent> events)
+		protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
 		{
 			string lastPartitionKey = null;
 			TableBatchOperation operation = null;
@@ -96,7 +89,7 @@ namespace Serilog.Sinks.AzureTableStorage
 					// If there is an operation currently in use, execute it
 					if (operation != null)
 					{
-						_table.ExecuteBatch(operation);
+						await _table.ExecuteBatchAsync(operation);
 					}
 
 					// Create a new batch operation and zero count
@@ -111,7 +104,7 @@ namespace Serilog.Sinks.AzureTableStorage
 			}
 
 			// Execute last batch
-			_table.ExecuteBatch(operation);
+		    await _table.ExecuteBatchAsync(operation);
 		}
 	}
 }

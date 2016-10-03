@@ -26,6 +26,7 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureTableStorageSink : ILogEventSink
     {
+        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
         readonly CloudTable _table;
         long _rowKeyIndex;
@@ -47,7 +48,7 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExists();
+            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
 
         /// <summary>
@@ -61,7 +62,9 @@ namespace Serilog.Sinks.AzureTableStorage
                 _formatProvider,
                 logEvent.Timestamp.ToUniversalTime().Ticks);
             EnsureUniqueRowKey(logEventEntity);
-            _table.Execute(TableOperation.Insert(logEventEntity));
+
+            _table.ExecuteAsync(TableOperation.Insert(logEventEntity))
+                .SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
 
         /// <summary>

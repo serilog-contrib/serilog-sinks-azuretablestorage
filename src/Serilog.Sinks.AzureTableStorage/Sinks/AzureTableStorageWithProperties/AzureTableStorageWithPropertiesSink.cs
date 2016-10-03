@@ -17,11 +17,7 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -30,7 +26,8 @@ namespace Serilog.Sinks.AzureTableStorage
 	/// </summary>
 	public class AzureTableStorageWithPropertiesSink : ILogEventSink
 	{
-		private readonly IFormatProvider _formatProvider;
+	    private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
+        private readonly IFormatProvider _formatProvider;
 		private readonly CloudTable _table;
 		private readonly string _additionalRowKeyPostfix;
 
@@ -51,7 +48,7 @@ namespace Serilog.Sinks.AzureTableStorage
 			}
 
 			_table = tableClient.GetTableReference(storageTableName);
-			_table.CreateIfNotExists();
+			_table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
 
 			_formatProvider = formatProvider;
 
@@ -67,7 +64,10 @@ namespace Serilog.Sinks.AzureTableStorage
 		/// <param name="logEvent">The log event to write.</param>
 		public void Emit(LogEvent logEvent)
 		{
-			_table.Execute(TableOperation.Insert(AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix)));
+		    var op = TableOperation.Insert(
+		        AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix));
+            
+            _table.ExecuteAsync(op).SyncContextSafeWait(_waitTimeoutMilliseconds);
 		}
 	}
 }
