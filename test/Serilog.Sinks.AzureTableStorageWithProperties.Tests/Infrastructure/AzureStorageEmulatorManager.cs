@@ -1,16 +1,16 @@
 ﻿using System.Diagnostics;
 using System.Linq;
 
-namespace Serilog.Sinks.AzureTableStorage.Tests
+namespace Serilog.Sinks.AzureTableStorage.Tests.Infrastructure
 {
-    // Start/stop azure storage emulator from code.
-    // http://stackoverflow.com/questions/7547567/how-to-start-azure-storage-emulator-from-within-a-program
-    public static class AzureStorageEmulatorManager
-    {
-        private const string _windowsAzureStorageEmulatorPath = @"C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator\WAStorageEmulator.exe";
-
+	// Start/stop azure storage emulator from code.
+	// http://stackoverflow.com/questions/7547567/how-to-start-azure-storage-emulator-from-within-a-program
+	public static class AzureStorageEmulatorManager
+	{
+		private const string _windowsAzureStorageEmulatorPath = @"C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator\WAStorageEmulator.exe";
+        
         private const string _win7ProcessName = "WAStorageEmulator";
-        private const string _win8ProcessName = "WASTOR~1";
+		private const string _win8ProcessName = "WASTOR~1";
 
         private const string _azureStorageEmulator4_4Path = @"C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe";
         private const string _processName4_4 = "AzureStorageEmulator";
@@ -28,10 +28,10 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         };
 
         private static readonly ProcessStartInfo stopStorageEmulator = new ProcessStartInfo
-        {
-            FileName = _windowsAzureStorageEmulatorPath,
-            Arguments = "stop",
-        };
+		{
+			FileName = _windowsAzureStorageEmulatorPath,
+			Arguments = "stop",
+		};
 
         private static readonly ProcessStartInfo stopStorageEmulator4_4 = new ProcessStartInfo
         {
@@ -40,19 +40,19 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         };
 
         private static Process GetProcess()
-        {
-            return Process.GetProcessesByName(_win7ProcessName).FirstOrDefault()
+		{
+			return Process.GetProcessesByName(_win7ProcessName).FirstOrDefault()
                 ?? Process.GetProcessesByName(_win8ProcessName).FirstOrDefault()
                 ?? Process.GetProcessesByName(_processName4_4).FirstOrDefault();
-        }
+		}
 
-        public static bool IsProcessStarted()
-        {
-            return GetProcess() != null;
-        }
+		public static bool IsProcessStarted()
+		{
+			return GetProcess() != null;
+		}
 
-        public static void StartStorageEmulator()
-        {
+		public static void StartStorageEmulator()
+		{
             if (!IsProcessStarted())
             {
                 try
@@ -62,7 +62,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
                         process.WaitForExit();
                     }
                 }
-                catch(System.ComponentModel.Win32Exception ex)
+                catch (System.ComponentModel.Win32Exception ex)
                 {
                     if (ex.Message == "The system cannot find the file specified")
                     {
@@ -77,10 +77,10 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
                     }
                 }
             }
-        }
+            }
 
-        public static void StopStorageEmulator()
-        {
+            public static void StopStorageEmulator()
+            {
             try
             {
                 using (Process process = Process.Start(stopStorageEmulator4_4))

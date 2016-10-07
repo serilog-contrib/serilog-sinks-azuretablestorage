@@ -10,36 +10,9 @@ using System.Threading.Tasks;
 
 namespace Serilog.Sinks.AzureTableStorage.Tests
 {
-    public class AzureTableStorageWithPropertiesSinkTests : IDisposable
+    [Collection("AzureStorageIntegrationTests")]
+    public class AzureTableStorageWithPropertiesSinkTests
     {
-        private readonly bool _wasStorageEmulatorUp;
-
-        public AzureTableStorageWithPropertiesSinkTests()
-        {
-            if (!AzureStorageEmulatorManager.IsProcessStarted())
-            {
-                AzureStorageEmulatorManager.StartStorageEmulator();
-                _wasStorageEmulatorUp = false;
-            }
-            else
-            {
-                _wasStorageEmulatorUp = true;
-            }
-
-        }
-
-        public void Dispose()
-        {
-            if (!_wasStorageEmulatorUp)
-            {
-                AzureStorageEmulatorManager.StopStorageEmulator();
-            }
-            else
-            {
-                // Leave as it was before testing...
-            }
-        }
-
         static async Task<IList<DynamicTableEntity>> TableQueryTakeDynamicAsync(CloudTable table, int takeCount)
         {
             var queryToken = new TableContinuationToken();
