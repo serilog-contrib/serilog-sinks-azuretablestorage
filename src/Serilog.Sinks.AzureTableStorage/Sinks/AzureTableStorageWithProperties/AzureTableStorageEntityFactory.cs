@@ -28,7 +28,7 @@ namespace Serilog.Sinks.AzureTableStorage
     public static class AzureTableStorageEntityFactory
     {
         // Valid RowKey name characters
-        static readonly Regex _rowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?)");
+        static readonly Regex _rowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|\r\n?|\n)");
 
         // Azure tables support a maximum of 255 properties. PartitionKey, RowKey and Timestamp
         // bring the maximum to 252.
