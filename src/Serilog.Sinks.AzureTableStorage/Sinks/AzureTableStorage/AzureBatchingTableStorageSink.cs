@@ -1,11 +1,11 @@
 ﻿// Copyright 2014 Serilog Contributors
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,10 +14,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
 using Serilog.Sinks.PeriodicBatching;
+using System.Threading.Tasks;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -26,6 +28,7 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureBatchingTableStorageSink : PeriodicBatchingSink
     {
+        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
         readonly CloudTable _table;
 
@@ -51,21 +54,15 @@ namespace Serilog.Sinks.AzureTableStorage
             if (string.IsNullOrEmpty(storageTableName)) storageTableName = typeof(LogEventEntity).Name;
 
             _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExists();
+            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
 
-        /// <summary>
-        /// Emit a batch of log events, running to completion synchronously.
-        /// </summary>
-        /// <param name="events">The events to emit.</param>
-        /// <remarks>Override either <see cref="PeriodicBatchingSink.EmitBatch"/> or <see cref="PeriodicBatchingSink.EmitBatchAsync"/>,
-        /// not both.</remarks>
-        protected override void EmitBatch(IEnumerable<LogEvent> events)
+        protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
             var operation = new TableBatchOperation();
-            
+
             var first = true;
-            
+
             foreach (var logEvent in events)
             {
                 if (first)
@@ -86,7 +83,8 @@ namespace Serilog.Sinks.AzureTableStorage
 
                 _batchRowId++;
             }
-            _table.ExecuteBatch(operation);
+
+            await _table.ExecuteBatchAsync(operation);
         }
 
     }
