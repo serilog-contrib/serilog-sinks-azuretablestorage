@@ -32,7 +32,7 @@ namespace Serilog.Sinks.AzureTableStorage
     {
         readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
-        private readonly IKeyGenerator _batchKeyGenerator;
+        private readonly IKeyGenerator _keyGenerator;
         readonly CloudTable _table;
 
         /// <summary>
@@ -62,21 +62,21 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-        /// <param name="batchKeyGenerator">generator used for partition keys and row keys</param>
+        /// <param name="keyGenerator">generator used for partition keys and row keys</param>
         public AzureBatchingTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             int batchSizeLimit,
             TimeSpan period,
             string storageTableName = null,
-            IKeyGenerator batchKeyGenerator = null)
+            IKeyGenerator keyGenerator = null)
             : base(batchSizeLimit, period)
         {
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
                 throw new ArgumentException("batchSizeLimit must be between 1 and 100 for Azure Table Storage");
 
             _formatProvider = formatProvider;
-            _batchKeyGenerator = batchKeyGenerator ?? new DefaultKeyGenerator();
+            _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
             var tableClient = storageAccount.CreateCloudTableClient();
 
             if (string.IsNullOrEmpty(storageTableName)) storageTableName = typeof(LogEventEntity).Name;
@@ -93,7 +93,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
             foreach (var logEvent in events)
             {
-                var partitionKey = _batchKeyGenerator.GeneratePartitionKey(logEvent);
+                var partitionKey = _keyGenerator.GeneratePartitionKey(logEvent);
 
                 if (partitionKey != lastPartitionKey)
                 {
@@ -108,7 +108,7 @@ namespace Serilog.Sinks.AzureTableStorage
                     logEvent,
                     _formatProvider,
                     partitionKey,
-                    _batchKeyGenerator.GenerateRowKey(logEvent)
+                    _keyGenerator.GenerateRowKey(logEvent)
                     );
                 operation.Add(TableOperation.Insert(logEventEntity));
             }
