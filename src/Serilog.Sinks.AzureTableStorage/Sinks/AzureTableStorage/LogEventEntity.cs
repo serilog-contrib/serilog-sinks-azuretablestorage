@@ -25,11 +25,6 @@ namespace Serilog.Sinks.AzureTableStorage
     /// <summary>
     /// Represents a single log event for the Serilog Azure Table Storage Sink.
     /// </summary>
-    /// <remarks>
-    /// The PartitionKey is set to "0" followed by the ticks of the log event time (in UTC) as per what Azure Diagnostics logging has.
-    /// The RowKey is set to "{Level}|{MessageTemplate}" to allow you to search for certain categories of log messages or indeed for a
-    ///     specific log message quickly using the indexing in Azure Table Storage.
-    /// </remarks>
     public class LogEventEntity : TableEntity
     {
         static readonly Regex RowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|[\x00-\x1f]|[\x7f-\x9f])");
