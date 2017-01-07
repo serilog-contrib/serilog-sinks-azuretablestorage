@@ -18,9 +18,10 @@ using System.Threading;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
-using Serilog.Sinks.AzureTableStorageKeyGenerators;
+
 using Serilog.Sinks.PeriodicBatching;
 using System.Threading.Tasks;
+using Serilog.Sinks.AzureTableStorage.Sinks.AzureTableStorageKeyGenerators;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -31,7 +32,7 @@ namespace Serilog.Sinks.AzureTableStorage
     {
         readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
-        private readonly IBatchKeyGenerator _batchKeyGenerator;
+        private readonly IKeyGenerator _batchKeyGenerator;
         readonly CloudTable _table;
 
         /// <summary>
@@ -48,7 +49,7 @@ namespace Serilog.Sinks.AzureTableStorage
             int batchSizeLimit,
             TimeSpan period,
             string storageTableName = null)
-            : this(storageAccount, formatProvider, batchSizeLimit, period, storageTableName, new DefaultBatchKeyGenerator())
+            : this(storageAccount, formatProvider, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator())
             
         {
         }
@@ -68,13 +69,14 @@ namespace Serilog.Sinks.AzureTableStorage
             int batchSizeLimit,
             TimeSpan period,
             string storageTableName = null,
-            IBatchKeyGenerator batchKeyGenerator = null)
+            IKeyGenerator batchKeyGenerator = null)
             : base(batchSizeLimit, period)
         {
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
                 throw new ArgumentException("batchSizeLimit must be between 1 and 100 for Azure Table Storage");
+
             _formatProvider = formatProvider;
-            _batchKeyGenerator = batchKeyGenerator ?? new DefaultBatchKeyGenerator();
+            _batchKeyGenerator = batchKeyGenerator ?? new DefaultKeyGenerator();
             var tableClient = storageAccount.CreateCloudTableClient();
 
             if (string.IsNullOrEmpty(storageTableName)) storageTableName = typeof(LogEventEntity).Name;
@@ -86,7 +88,6 @@ namespace Serilog.Sinks.AzureTableStorage
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
             TableBatchOperation operation = new TableBatchOperation();
-            _batchKeyGenerator.StartBatch();
 
             string lastPartitionKey = null;
 
@@ -99,9 +100,8 @@ namespace Serilog.Sinks.AzureTableStorage
                     lastPartitionKey = partitionKey;
                     if (operation.Count > 0)
                     {
-                        _table.ExecuteBatch(operation);
+                        await _table.ExecuteBatchAsync(operation);
                         operation = new TableBatchOperation();
-                        _batchKeyGenerator.StartBatch();
                     }
                 }
                 var logEventEntity = new LogEventEntity(

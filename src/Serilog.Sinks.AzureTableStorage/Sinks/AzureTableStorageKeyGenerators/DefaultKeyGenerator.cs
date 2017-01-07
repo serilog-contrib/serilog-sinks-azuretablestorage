@@ -1,7 +1,7 @@
 using System.Threading;
 using Serilog.Events;
 
-namespace Serilog.Sinks.AzureTableStorageKeyGenerators
+namespace Serilog.Sinks.AzureTableStorage.Sinks.AzureTableStorageKeyGenerators
 {
     class DefaultKeyGenerator : IKeyGenerator
     {
@@ -16,16 +16,12 @@ namespace Serilog.Sinks.AzureTableStorageKeyGenerators
         {
             var utcEventTime = logEvent.Timestamp.UtcDateTime;
             var timeRoundedToMinute = utcEventTime.AddMilliseconds(-utcEventTime.Millisecond);
-            return string.Format("0{0}", timeRoundedToMinute.Ticks);
+            return $"0{timeRoundedToMinute.Ticks}";
         }
 
         public string GenerateRowKey(LogEvent logEvent)
         {
-            return string.Format("{0}|{1}|{2}",
-                logEvent.Level,
-                logEvent.MessageTemplate.Text,
-                Interlocked.Increment(ref RowId)
-                );
+            return $"{Interlocked.Increment(ref RowId)}";
         }
     }
 }

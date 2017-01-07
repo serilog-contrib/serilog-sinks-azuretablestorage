@@ -19,7 +19,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
-using Serilog.Sinks.AzureTableStorageKeyGenerators;
+using Serilog.Sinks.AzureTableStorage.Sinks.AzureTableStorageKeyGenerators;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -82,8 +82,9 @@ namespace Serilog.Sinks.AzureTableStorage
             var logEventEntity = new LogEventEntity(
                 logEvent,
                 _formatProvider,
-                logEvent.Timestamp.ToUniversalTime().Ticks);
-            EnsureUniqueRowKey(logEventEntity);
+                _keyGenerator.GeneratePartitionKey(logEvent),
+                _keyGenerator.GenerateRowKey(logEvent)
+                );
 
             _table.ExecuteAsync(TableOperation.Insert(logEventEntity))
                 .SyncContextSafeWait(_waitTimeoutMilliseconds);
