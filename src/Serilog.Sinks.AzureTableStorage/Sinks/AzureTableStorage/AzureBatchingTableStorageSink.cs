@@ -21,7 +21,7 @@ using Serilog.Events;
 
 using Serilog.Sinks.PeriodicBatching;
 using System.Threading.Tasks;
-using Serilog.Sinks.AzureTableStorage.Sinks.AzureTableStorageKeyGenerators;
+using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
 namespace Serilog.Sinks.AzureTableStorage
 {

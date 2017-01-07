@@ -1,7 +1,7 @@
 using System.Threading;
 using Serilog.Events;
 
-namespace Serilog.Sinks.AzureTableStorage.Sinks.AzureTableStorageKeyGenerators
+namespace Serilog.Sinks.AzureTableStorage.KeyGenerator
 {
     class DefaultKeyGenerator : IKeyGenerator
     {

@@ -1,6 +1,6 @@
 ﻿using Serilog.Events;
 
-namespace Serilog.Sinks.AzureTableStorage.Sinks.AzureTableStorageKeyGenerators
+namespace Serilog.Sinks.AzureTableStorage.KeyGenerator
 {
     /// <summary>
     /// Interface used to generate row keys for <see cref="LogEvent"/>s
