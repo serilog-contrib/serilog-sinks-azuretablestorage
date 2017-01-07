@@ -1,0 +1,29 @@
+{
+  "testRunner": "xunit",
+
+  "dependencies": {
+    "Serilog.Sinks.AzureTableStorage": { "target": "project" },
+    "xunit": "2.2.0-*",
+    "dotnet-test-xunit": "2.2.0-*"
+  },
+
+  "buildOptions": {
+    "keyFile": "../../assets/Serilog.snk"
+  },
+  "frameworks": {
+    "net4.5.2": {
+
+    },
+    "netcoreapp1.0": {
+      "imports": [
+        "portable-net45+win8+wp8+wpa81"
+      ],
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        }
+      }
+    }
+  }
+}
