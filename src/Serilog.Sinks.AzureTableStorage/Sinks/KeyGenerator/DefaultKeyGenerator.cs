@@ -21,6 +21,7 @@ namespace Serilog.Sinks.AzureTableStorage.KeyGenerator
 
         public string GenerateRowKey(LogEvent logEvent)
         {
+            return $"{logEvent.Level}|{logEvent.MessageTemplate}|{Interlocked.Increment(ref RowId)}";
         }
     }
 }
