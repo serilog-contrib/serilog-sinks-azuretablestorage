@@ -18,6 +18,7 @@ using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage;
+using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
 namespace Serilog
 {
@@ -49,6 +50,7 @@ namespace Serilog
         /// key used for the events so is not enabled by default.</param>
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
+        /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureTableStorage(
@@ -59,13 +61,14 @@ namespace Serilog
             string storageTableName = null,
             bool writeInBatches = false,
             TimeSpan? period = null,
-            int? batchPostingLimit = null)
+            int? batchPostingLimit = null,
+            IKeyGenerator keyGenerator = null)
         {
             if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
             if (storageAccount == null) throw new ArgumentNullException("storageAccount");
 
             var sink = writeInBatches ?
-                (ILogEventSink)new AzureBatchingTableStorageSink(storageAccount, formatProvider,  batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName) :
+                (ILogEventSink)new AzureBatchingTableStorageSink(storageAccount, formatProvider,  batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, keyGenerator) :
                 new AzureTableStorageSink(storageAccount, formatProvider, storageTableName);
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
@@ -83,6 +86,7 @@ namespace Serilog
         /// key used for the events so is not enabled by default.</param>
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
+        /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureTableStorage(
@@ -93,12 +97,13 @@ namespace Serilog
             string storageTableName = null,
             bool writeInBatches = false,
             TimeSpan? period = null,
-            int? batchPostingLimit = null)
+            int? batchPostingLimit = null,
+            IKeyGenerator keyGenerator = null)
         {
             if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
             if (String.IsNullOrEmpty(connectionString)) throw new ArgumentNullException("connectionString");
             var storageAccount = CloudStorageAccount.Parse(connectionString);
-            return AzureTableStorage(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit);
+            return AzureTableStorage(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator);
         }
     }
 }
