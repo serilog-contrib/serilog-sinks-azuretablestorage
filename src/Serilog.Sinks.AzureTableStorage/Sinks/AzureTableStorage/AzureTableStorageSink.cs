@@ -13,11 +13,13 @@
 // limitations under the License.
 
 using System;
+using System.Globalization;
 using System.Threading;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -28,8 +30,8 @@ namespace Serilog.Sinks.AzureTableStorage
     {
         readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
+        readonly IKeyGenerator _keyGenerator;
         readonly CloudTable _table;
-        long _rowKeyIndex;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -37,9 +39,29 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-        public AzureTableStorageSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, string storageTableName = null)
+        public AzureTableStorageSink(
+            CloudStorageAccount storageAccount,
+            IFormatProvider formatProvider,
+            string storageTableName
+            ) :this(storageAccount, formatProvider, storageTableName, new DefaultKeyGenerator())
+        {
+        }
+
+        /// <summary>
+        /// Construct a sink that saves logs to the specified storage account.
+        /// </summary>
+        /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
+        /// <param name="keyGenerator">generator used to generate partition keys and row keys</param>
+        public AzureTableStorageSink(
+            CloudStorageAccount storageAccount,
+            IFormatProvider formatProvider,
+            string storageTableName = null,
+            IKeyGenerator keyGenerator = null)
         {
             _formatProvider = formatProvider;
+            _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
             var tableClient = storageAccount.CreateCloudTableClient();
 
             if (string.IsNullOrEmpty(storageTableName))
@@ -60,22 +82,12 @@ namespace Serilog.Sinks.AzureTableStorage
             var logEventEntity = new LogEventEntity(
                 logEvent,
                 _formatProvider,
-                logEvent.Timestamp.ToUniversalTime().Ticks);
-            EnsureUniqueRowKey(logEventEntity);
+                _keyGenerator.GeneratePartitionKey(logEvent),
+                _keyGenerator.GenerateRowKey(logEvent)
+                );
 
             _table.ExecuteAsync(TableOperation.Insert(logEventEntity))
                 .SyncContextSafeWait(_waitTimeoutMilliseconds);
-        }
-
-        /// <summary>
-        /// Appends an incrementing index to the row key to ensure that it will
-        /// not conflict with existing rows created at the same time / with the
-        /// same partition key.
-        /// </summary>
-        /// <param name="logEventEntity"></param>
-        void EnsureUniqueRowKey(ITableEntity logEventEntity)
-        {
-            logEventEntity.RowKey += "|" + Interlocked.Increment(ref _rowKeyIndex);
         }
     }
 }
