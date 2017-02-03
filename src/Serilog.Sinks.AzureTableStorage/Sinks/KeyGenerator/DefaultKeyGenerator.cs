@@ -15,8 +15,8 @@ namespace Serilog.Sinks.AzureTableStorage.KeyGenerator
         public string GeneratePartitionKey(LogEvent logEvent)
         {
             var utcEventTime = logEvent.Timestamp.UtcDateTime;
-            var timeRoundedToMinute = utcEventTime.AddMilliseconds(-utcEventTime.Millisecond);
-            return $"0{timeRoundedToMinute.Ticks}";
+            var timeWithoutMilliseconds = utcEventTime.AddMilliseconds(-utcEventTime.Millisecond);
+            return $"0{timeWithoutMilliseconds.Ticks}";
         }
 
         public string GenerateRowKey(LogEvent logEvent)
