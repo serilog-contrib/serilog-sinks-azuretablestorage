@@ -69,7 +69,7 @@ namespace Serilog
 
             var sink = writeInBatches ?
                 (ILogEventSink)new AzureBatchingTableStorageSink(storageAccount, formatProvider,  batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, keyGenerator) :
-                new AzureTableStorageSink(storageAccount, formatProvider, storageTableName);
+                new AzureTableStorageSink(storageAccount, formatProvider, storageTableName, keyGenerator);
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }

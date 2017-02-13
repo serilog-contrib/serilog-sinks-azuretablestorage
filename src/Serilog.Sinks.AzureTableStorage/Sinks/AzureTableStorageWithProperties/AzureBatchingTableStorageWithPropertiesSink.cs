@@ -20,6 +20,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog.Sinks.AzureTableStorage.KeyGenerator;
+using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -33,6 +35,7 @@ namespace Serilog.Sinks.AzureTableStorage
         private readonly CloudTable _table;
         private readonly string _additionalRowKeyPostfix;
         private const int _maxAzureOperationsPerBatch = 100;
+        private readonly IKeyGenerator _keyGenerator;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -43,7 +46,14 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
-        public AzureBatchingTableStorageWithPropertiesSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, int batchSizeLimit, TimeSpan period, string storageTableName = null, string additionalRowKeyPostfix = null)
+        /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
+        public AzureBatchingTableStorageWithPropertiesSink(CloudStorageAccount storageAccount,
+            IFormatProvider formatProvider,
+            int batchSizeLimit,
+            TimeSpan period,
+            string storageTableName = null,
+            string additionalRowKeyPostfix = null,
+            IKeyGenerator keyGenerator = null)
             : base(batchSizeLimit, period)
         {
             var tableClient = storageAccount.CreateCloudTableClient();
@@ -57,22 +67,19 @@ namespace Serilog.Sinks.AzureTableStorage
             _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
 
             _formatProvider = formatProvider;
-
-            if (additionalRowKeyPostfix != null)
-            {
-                _additionalRowKeyPostfix = AzureTableStorageEntityFactory.GetValidStringForTableKey(additionalRowKeyPostfix);
-            }
+            _additionalRowKeyPostfix = additionalRowKeyPostfix;
+            _keyGenerator = keyGenerator ?? new PropertiesKeyGenerator();
         }
 
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
             string lastPartitionKey = null;
             TableBatchOperation operation = null;
-            int insertsPerOperation = 0;
+            var insertsPerOperation = 0;
 
             foreach (var logEvent in events)
             {
-                var tableEntity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix);
+                var tableEntity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator);
 
                 // If partition changed, store the new and force an execution
                 if (lastPartitionKey != tableEntity.PartitionKey)

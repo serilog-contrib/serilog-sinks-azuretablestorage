@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using System.Globalization;
 using System.Threading;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -32,20 +31,6 @@ namespace Serilog.Sinks.AzureTableStorage
         readonly IFormatProvider _formatProvider;
         readonly IKeyGenerator _keyGenerator;
         readonly CloudTable _table;
-
-        /// <summary>
-        /// Construct a sink that saves logs to the specified storage account.
-        /// </summary>
-        /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
-        /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-        public AzureTableStorageSink(
-            CloudStorageAccount storageAccount,
-            IFormatProvider formatProvider,
-            string storageTableName
-            ) :this(storageAccount, formatProvider, storageTableName, new DefaultKeyGenerator())
-        {
-        }
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
