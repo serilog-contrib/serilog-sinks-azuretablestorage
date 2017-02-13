@@ -18,7 +18,8 @@ namespace Serilog.Sinks.AzureTableStorage.KeyGenerator
         /// Generate a row key for the supplied <paramref name="logEvent"/>.
         /// </summary>
         /// <param name="logEvent">the log event</param>
+        /// <param name="suffix">suffix to the RowKey</param>
         /// <returns>the row key that should be stored in the Azure table</returns>
-        string GenerateRowKey(LogEvent logEvent);
+        string GenerateRowKey(LogEvent logEvent, string suffix = null);
     }
 }

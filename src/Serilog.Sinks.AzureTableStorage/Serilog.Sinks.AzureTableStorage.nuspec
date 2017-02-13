@@ -11,8 +11,9 @@
     <iconUrl>http://serilog.net/images/serilog-sink-nuget.png</iconUrl>
     <tags>serilog logging azure</tags>
     <dependencies>
-      <dependency id="Serilog" version="2.0" />
-      <dependency id="WindowsAzure.Storage" version="2.0" />
+      <dependency id="Serilog" version="2.3.0" />
+      <dependency id="Serilog.Sinks.PeriodicBatching" version="2.1.0" />
+      <dependency id="WindowsAzure.Storage" version="7.2.0" />
     </dependencies>
   </metadata>
 </package>
