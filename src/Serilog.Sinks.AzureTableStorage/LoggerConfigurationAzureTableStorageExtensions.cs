@@ -19,6 +19,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
+using Serilog.Sinks.AzureTableStorage.Sinks;
 
 namespace Serilog
 {
@@ -67,9 +68,20 @@ namespace Serilog
             if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
             if (storageAccount == null) throw new ArgumentNullException("storageAccount");
 
-            var sink = writeInBatches ?
-                (ILogEventSink)new AzureBatchingTableStorageSink(storageAccount, formatProvider,  batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, keyGenerator) :
-                new AzureTableStorageSink(storageAccount, formatProvider, storageTableName, keyGenerator);
+			ILogEventSink sink;
+
+			try
+			{
+				sink = writeInBatches ?
+					(ILogEventSink)new AzureBatchingTableStorageSink(storageAccount, formatProvider, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, keyGenerator) :
+					new AzureTableStorageSink(storageAccount, formatProvider, storageTableName, keyGenerator);
+			}
+
+			catch (Exception ex)
+			{
+				Debugging.SelfLog.WriteLine("Error configuring AzureTableStorage: {0}", ex);
+				sink = new NullSink();
+			}
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }
