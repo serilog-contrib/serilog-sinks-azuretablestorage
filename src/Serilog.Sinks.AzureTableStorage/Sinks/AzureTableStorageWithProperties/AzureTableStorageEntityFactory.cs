@@ -61,9 +61,15 @@ namespace Serilog.Sinks.AzureTableStorage
 
             List<KeyValuePair<ScalarValue, LogEventPropertyValue>> additionalData = null;
             var count = dynamicProperties.Count;
+			bool isNumeric;
+			int parsedNumber;
+
             foreach (var logProperty in logEvent.Properties)
             {
-                if (count++ < _maxNumberOfPropertiesPerRow - 1)
+				isNumeric = int.TryParse(logProperty.Key, out parsedNumber);
+
+				// Don't add table properties for numeric property names
+                if (!isNumeric && (count++ < _maxNumberOfPropertiesPerRow - 1))
                 {
                     dynamicProperties.Add(logProperty.Key, AzurePropertyFormatter.ToEntityProperty(logProperty.Value, null, formatProvider));
                 }

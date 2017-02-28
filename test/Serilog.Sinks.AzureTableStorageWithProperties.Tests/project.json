@@ -11,9 +11,6 @@
     "keyFile": "../../assets/Serilog.snk"
   },
   "frameworks": {
-    "net4.5.2": {
-
-    },
     "netcoreapp1.0": {
       "imports": [
         "portable-net45+win8+wp8+wpa81"
@@ -24,6 +21,9 @@
           "version": "1.0.0"
         }
       }
+    },
+    "net4.5.2": {
+
     }
   }
 }
