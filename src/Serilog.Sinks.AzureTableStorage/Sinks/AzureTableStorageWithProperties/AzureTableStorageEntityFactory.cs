@@ -61,15 +61,14 @@ namespace Serilog.Sinks.AzureTableStorage
 
             List<KeyValuePair<ScalarValue, LogEventPropertyValue>> additionalData = null;
             var count = dynamicProperties.Count;
-			bool isNumeric;
-			int parsedNumber;
+            bool isValid;
 
             foreach (var logProperty in logEvent.Properties)
             {
-				isNumeric = int.TryParse(logProperty.Key, out parsedNumber);
+                isValid = IsValidColumnName(logProperty.Key);
 
-				// Don't add table properties for numeric property names
-                if (!isNumeric && (count++ < _maxNumberOfPropertiesPerRow - 1))
+                // Don't add table properties for numeric property names
+                if (isValid && (count++ < _maxNumberOfPropertiesPerRow - 1))
                 {
                     dynamicProperties.Add(logProperty.Key, AzurePropertyFormatter.ToEntityProperty(logProperty.Value, null, formatProvider));
                 }
@@ -89,6 +88,19 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             return tableEntity;
+        }
+
+        /// <summary>
+        /// Determines whether or not the given property names conforms to naming rules for C# identifiers
+        /// </summary>
+        /// <param name="propertyName">Name of the property to check</param>
+        /// <returns>true if the property name conforms to C# identifier naming rules and can therefore be added as a table property</returns>
+        private static bool IsValidColumnName(string propertyName)
+        {
+            string regex = @"^(?:((?!\d)\w+(?:\.(?!\d)\w+)*)\.)?((?!\d)\w+)$";
+            bool isValid = Regex.Match(propertyName, regex).Success;
+
+            return isValid;
         }
     }
 }
