@@ -52,6 +52,7 @@ namespace Serilog
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
         /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
+        /// <param name="propagateExceptions">Whether connection issues should throw an exception; disabled by default.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureTableStorage(
@@ -63,25 +64,28 @@ namespace Serilog
             bool writeInBatches = false,
             TimeSpan? period = null,
             int? batchPostingLimit = null,
-            IKeyGenerator keyGenerator = null)
+            IKeyGenerator keyGenerator = null,
+            bool propagateExceptions = false)
         {
             if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
             if (storageAccount == null) throw new ArgumentNullException("storageAccount");
 
-			ILogEventSink sink;
+            ILogEventSink sink;
 
-			try
-			{
-				sink = writeInBatches ?
-					(ILogEventSink)new AzureBatchingTableStorageSink(storageAccount, formatProvider, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, keyGenerator) :
-					new AzureTableStorageSink(storageAccount, formatProvider, storageTableName, keyGenerator);
-			}
+            try
+            {
+                sink = writeInBatches ?
+                    (ILogEventSink)new AzureBatchingTableStorageSink(storageAccount, formatProvider, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, keyGenerator) :
+                    new AzureTableStorageSink(storageAccount, formatProvider, storageTableName, keyGenerator);
+            }
+            catch (Exception ex)
+            {
+                if (propagateExceptions)
+                    throw;
 
-			catch (Exception ex)
-			{
-				Debugging.SelfLog.WriteLine("Error configuring AzureTableStorage: {0}", ex);
-				sink = new NullSink();
-			}
+                Debugging.SelfLog.WriteLine("Error configuring AzureTableStorage: {0}", ex);
+                sink = new LoggerConfiguration().CreateLogger();
+            }
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }
@@ -99,6 +103,7 @@ namespace Serilog
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
         /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
+        /// <param name="propagateExceptions">Whether connection string issues should throw an exception; disabled by default.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureTableStorage(
@@ -110,12 +115,27 @@ namespace Serilog
             bool writeInBatches = false,
             TimeSpan? period = null,
             int? batchPostingLimit = null,
-            IKeyGenerator keyGenerator = null)
+            IKeyGenerator keyGenerator = null,
+            bool propagateExceptions = false)
         {
             if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
             if (String.IsNullOrEmpty(connectionString)) throw new ArgumentNullException("connectionString");
-            var storageAccount = CloudStorageAccount.Parse(connectionString);
-            return AzureTableStorage(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator);
+
+            try
+            {
+                var storageAccount = CloudStorageAccount.Parse(connectionString);
+                return AzureTableStorage(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, propagateExceptions);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine("Error configuring AzureTableStorage: {0}", ex);
+
+                if (propagateExceptions)
+                    throw;
+
+                ILogEventSink sink = new LoggerConfiguration().CreateLogger();
+                return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
+            }
         }
     }
 }
