@@ -318,28 +318,6 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         }
 
         [Fact]
-        public void WhenALoggerUsesAnInvalidStorageConnectionStringItFails()
-        {
-            Assert.Throws(typeof(FormatException), () =>
-            {
-                Log.Logger = new LoggerConfiguration()
-                    .WriteTo.AzureTableStorage("InvalidConnectionString!!!", propagateExceptions: true)
-                    .CreateLogger();
-            });
-        }
-
-        [Fact]
-        public void WhenALoggerWithPropertiesUsesAnInvalidStorageConnectionStringItFails()
-        {
-            Assert.Throws(typeof(FormatException), () =>
-            {
-                Log.Logger = new LoggerConfiguration()
-                    .WriteTo.AzureTableStorageWithProperties("InvalidConnectionString!!!", propagateExceptions: true)
-                    .CreateLogger();
-            });
-        }
-
-        [Fact]
         public void WhenALoggerUsesAnInvalidStorageConnectionStringItDoesntFail()
         {
             Log.Logger = new LoggerConfiguration()
