@@ -215,6 +215,51 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         }
 
         [Fact]
+        public async Task WhenALoggerWritesToTheSinkItAllowsStringFormatNumericPropertyNames()
+        {
+            var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
+            var tableClient = storageAccount.CreateCloudTableClient();
+            var table = tableClient.GetTableReference("LogEventEntity");
+
+            await table.DeleteIfExistsAsync();
+
+            var logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .CreateLogger();
+
+            var expectedResult = "Hello \"world\"";
+
+            logger.Information("Hello {0}", "world");
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
+
+            Assert.Equal(expectedResult, result.Properties["RenderedMessage"].StringValue);
+        }
+
+        [Fact]
+        public async Task WhenALoggerWritesToTheSinkItAllowsNamedAndNumericPropertyNames()
+        {
+            var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
+            var tableClient = storageAccount.CreateCloudTableClient();
+            var table = tableClient.GetTableReference("LogEventEntity");
+
+            await table.DeleteIfExistsAsync();
+
+            var logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .CreateLogger();
+
+            var name = "John Smith";
+            var expectedResult = "Hello \"world\" this is \"John Smith\" 1234";
+
+            logger.Information("Hello {0} this is {Name} {_1234}", "world", name, 1234);
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
+
+            Assert.Equal(expectedResult, result.Properties["RenderedMessage"].StringValue);
+            Assert.Equal(name, result.Properties["Name"].StringValue);
+            Assert.Equal(1234, result.Properties["_1234"].Int32Value);
+        }
+
+        [Fact]
         public async Task WhenABatchLoggerWritesToTheSinkItStoresAllTheEntries()
         {
             var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
