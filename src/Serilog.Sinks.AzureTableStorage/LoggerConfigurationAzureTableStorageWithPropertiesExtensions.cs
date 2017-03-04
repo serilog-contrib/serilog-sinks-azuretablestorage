@@ -20,6 +20,7 @@ using Serilog.Sinks.AzureTableStorage;
 using System;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
+using Serilog.Sinks.AzureTableStorage.Sinks;
 
 namespace Serilog
 {
@@ -53,6 +54,7 @@ namespace Serilog
         /// <param name="period">The time to wait between checking for event batches.</param>
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
         /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
+        /// <param name="propagateExceptions">Whether connection issues should throw an exception; disabled by default.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureTableStorageWithProperties(
@@ -70,10 +72,20 @@ namespace Serilog
             if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
             if (storageAccount == null) throw new ArgumentNullException("storageAccount");
 
-            var sink = writeInBatches
-                ? (ILogEventSink)
-                new AzureBatchingTableStorageWithPropertiesSink(storageAccount, formatProvider, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, additionalRowKeyPostfix, keyGenerator)
-                : new AzureTableStorageWithPropertiesSink(storageAccount, formatProvider, storageTableName, additionalRowKeyPostfix, keyGenerator);
+            ILogEventSink sink;
+
+            try
+            {
+                sink = writeInBatches
+                    ? (ILogEventSink)
+                    new AzureBatchingTableStorageWithPropertiesSink(storageAccount, formatProvider, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, additionalRowKeyPostfix, keyGenerator)
+                    : new AzureTableStorageWithPropertiesSink(storageAccount, formatProvider, storageTableName, additionalRowKeyPostfix, keyGenerator);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine("Error configuring AzureTableStorageWithProperties: {0}", ex);
+                sink = new LoggerConfiguration().CreateLogger();
+            }
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }
@@ -108,8 +120,19 @@ namespace Serilog
         {
             if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
             if (String.IsNullOrEmpty(connectionString)) throw new ArgumentNullException("connectionString");
-            var storageAccount = CloudStorageAccount.Parse(connectionString);
-            return AzureTableStorageWithProperties(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, additionalRowKeyPostfix, keyGenerator);
+
+            try
+            {
+                var storageAccount = CloudStorageAccount.Parse(connectionString);
+                return AzureTableStorageWithProperties(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, additionalRowKeyPostfix, keyGenerator);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine("Error configuring AzureTableStorageWithProperties: {0}", ex);
+
+                ILogEventSink sink = new LoggerConfiguration().CreateLogger();
+                return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
+            }
         }
     }
 }

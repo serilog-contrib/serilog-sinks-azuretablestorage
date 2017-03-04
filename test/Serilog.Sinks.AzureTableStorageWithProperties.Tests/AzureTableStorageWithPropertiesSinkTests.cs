@@ -338,5 +338,52 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             Assert.Equal(300, result.Count);
         }
 
+        [Fact]
+        public void WhenALoggerUsesAnUnreachableStorageServiceItDoesntFail()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorage("DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=/////////////////////////////////////////////////////////////////////////////////////w==;BlobEndpoint=http://127.0.0.1:16660/devstoreaccount1;TableEndpoint=http://127.0.0.1:16662/devstoreaccount1;QueueEndpoint=http://127.0.0.1:16661/devstoreaccount1;")
+                .CreateLogger();
+
+            Log.Information("This should silently work, even though the connection string points to invalid endpoints");
+
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void WhenALoggerWithPropertiesUsesAnUnreachableStorageServiceItDoesntFail()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties("DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=/////////////////////////////////////////////////////////////////////////////////////w==;BlobEndpoint=http://127.0.0.1:16660/devstoreaccount1;TableEndpoint=http://127.0.0.1:16662/devstoreaccount1;QueueEndpoint=http://127.0.0.1:16661/devstoreaccount1;")
+                .CreateLogger();
+
+            Log.Information("This should silently work, even though the connection string points to invalid endpoints");
+
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void WhenALoggerUsesAnInvalidStorageConnectionStringItDoesntFail()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorage("InvalidConnectionString!!!")
+                .CreateLogger();
+
+            Log.Information("This should silently work, even though the connection string is malformed");
+
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void WhenALoggerWithPropertiesUsesAnInvalidStorageConnectionStringItDoesntFail()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties("InvalidConnectionString!!!")
+                .CreateLogger();
+
+            Log.Information("This should silently work, even though the connection string is malformed");
+
+            Assert.True(true);
+        }
     }
 }
