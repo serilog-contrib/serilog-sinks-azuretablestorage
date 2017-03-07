@@ -40,10 +40,8 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
         /// <param name="keyGenerator">The IKeyGenerator for the PartitionKey and RowKey</param>
         /// <param name="specificProperties">Specific properties to be added to the table entity</param>
-        /// <param name="onlySpecificProperties">Only configure the specific properties specified; otherwise, all properties provided 
-        /// in the logEvent will be created</param>
         /// <returns></returns>
-        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix, IKeyGenerator keyGenerator, string[] specificProperties = null, bool onlySpecificProperties = false)
+        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix, IKeyGenerator keyGenerator, string[] specificProperties = null)
         {
             var tableEntity = new DynamicTableEntity
             {
@@ -69,7 +67,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
             foreach (var logProperty in logEvent.Properties)
             {
-                isValid = IsValidColumnName(logProperty.Key) && IsSpecificColumn(logProperty.Key, onlySpecificProperties, specificProperties);
+                isValid = IsValidColumnName(logProperty.Key) && IsValidSpecificColumn(logProperty.Key, specificProperties);
 
                 // Don't add table properties for numeric property names
                 if (isValid && (count++ < _maxNumberOfPropertiesPerRow - 1))
@@ -108,15 +106,15 @@ namespace Serilog.Sinks.AzureTableStorage
         }
 
         /// <summary>
-        /// Determines whether or not the given property names conforms to naming rules for C# identifiers
+        /// Determines if the given property name exists in the specific columns. 
+        /// Note: If specific columns is not defined then the property name is considered valid. 
         /// </summary>
         /// <param name="propertyName">Name of the property to check</param>
-        /// <param name="specificColumns"></param>
-        /// <param name="onlySpecificColumns"></param>
-        /// <returns>true if the property name conforms to C# identifier naming rules and can therefore be added as a table property</returns>
-        private static bool IsSpecificColumn(string propertyName, bool onlySpecificColumns, IEnumerable<string> specificColumns)
+        /// <param name="specificProperties">List of defined properties only to be added as columns</param>
+        /// <returns>true if the no specificColumns are specified or it is included in the specificColumns property</returns>
+        private static bool IsValidSpecificColumn(string propertyName, string[] specificProperties)
         {
-            return !onlySpecificColumns || (specificColumns != null && specificColumns.Contains(propertyName));
+            return specificProperties == null || specificProperties.Contains(propertyName);
         }
     }
 }
