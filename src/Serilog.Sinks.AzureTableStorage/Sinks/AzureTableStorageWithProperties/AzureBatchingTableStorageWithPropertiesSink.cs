@@ -34,6 +34,8 @@ namespace Serilog.Sinks.AzureTableStorage
         private readonly IFormatProvider _formatProvider;
         private readonly CloudTable _table;
         private readonly string _additionalRowKeyPostfix;
+        private readonly string[] _specificProperties;
+        private readonly bool _onlySpecificProperties;
         private const int _maxAzureOperationsPerBatch = 100;
         private readonly IKeyGenerator _keyGenerator;
 
@@ -47,13 +49,19 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
         /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
+        /// <param name="specificProperties">Specific properties to be added to the Table Storage</param>
+        /// <param name="onlySpecificProperties">Only configure the specific properties specified; otherwise, all properties provided 
+        /// in the message templates will be created</param>
+        /// <returns>Logger configuration, allowing configuration to continue.</returns>
         public AzureBatchingTableStorageWithPropertiesSink(CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             int batchSizeLimit,
             TimeSpan period,
             string storageTableName = null,
             string additionalRowKeyPostfix = null,
-            IKeyGenerator keyGenerator = null)
+            IKeyGenerator keyGenerator = null, 
+            string[] specificProperties = null, 
+            bool onlySpecificProperties = false)
             : base(batchSizeLimit, period)
         {
             var tableClient = storageAccount.CreateCloudTableClient();
@@ -68,6 +76,8 @@ namespace Serilog.Sinks.AzureTableStorage
 
             _formatProvider = formatProvider;
             _additionalRowKeyPostfix = additionalRowKeyPostfix;
+            _specificProperties = specificProperties;
+            _onlySpecificProperties = onlySpecificProperties;
             _keyGenerator = keyGenerator ?? new PropertiesKeyGenerator();
         }
 
@@ -79,7 +89,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
             foreach (var logEvent in events)
             {
-                var tableEntity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator);
+                var tableEntity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator, _specificProperties, _onlySpecificProperties);
 
                 // If partition changed, store the new and force an execution
                 if (lastPartitionKey != tableEntity.PartitionKey)

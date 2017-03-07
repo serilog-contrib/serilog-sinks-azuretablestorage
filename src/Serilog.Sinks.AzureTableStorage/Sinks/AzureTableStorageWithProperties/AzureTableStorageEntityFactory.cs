@@ -16,6 +16,7 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
@@ -38,8 +39,11 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
         /// <param name="keyGenerator">The IKeyGenerator for the PartitionKey and RowKey</param>
+        /// <param name="specificProperties">Specific properties to be added to the table entity</param>
+        /// <param name="onlySpecificProperties">Only configure the specific properties specified; otherwise, all properties provided 
+        /// in the logEvent will be created</param>
         /// <returns></returns>
-        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix, IKeyGenerator keyGenerator)
+        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix, IKeyGenerator keyGenerator, string[] specificProperties = null, bool onlySpecificProperties = false)
         {
             var tableEntity = new DynamicTableEntity
             {
@@ -65,7 +69,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
             foreach (var logProperty in logEvent.Properties)
             {
-                isValid = IsValidColumnName(logProperty.Key);
+                isValid = IsValidColumnName(logProperty.Key) && IsSpecificColumn(logProperty.Key, onlySpecificProperties, specificProperties);
 
                 // Don't add table properties for numeric property names
                 if (isValid && (count++ < _maxNumberOfPropertiesPerRow - 1))
@@ -101,6 +105,18 @@ namespace Serilog.Sinks.AzureTableStorage
             bool isValid = Regex.Match(propertyName, regex).Success;
 
             return isValid;
+        }
+
+        /// <summary>
+        /// Determines whether or not the given property names conforms to naming rules for C# identifiers
+        /// </summary>
+        /// <param name="propertyName">Name of the property to check</param>
+        /// <param name="specificColumns"></param>
+        /// <param name="onlySpecificColumns"></param>
+        /// <returns>true if the property name conforms to C# identifier naming rules and can therefore be added as a table property</returns>
+        private static bool IsSpecificColumn(string propertyName, bool onlySpecificColumns, IEnumerable<string> specificColumns)
+        {
+            return !onlySpecificColumns || (specificColumns != null && specificColumns.Contains(propertyName));
         }
     }
 }

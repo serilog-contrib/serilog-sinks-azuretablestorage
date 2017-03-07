@@ -239,5 +239,49 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             Assert.Equal(252, entity.Properties.Count);
             Assert.Contains("AggregatedProperties", entity.Properties.Keys.ToList());
         }
+
+        [Fact]
+        public void CreateEntityWithAdditionalPropertiesOnlyShouldNotAddUnspecifiedProperties()
+        {
+            const string messageTemplate = "{IncludedProperty} {AdditionalProperty}";
+            const string includedPropertyValue = "included value";
+            const string excludedPropertyValue = "excluded value";
+            var includedProperties = new[] {"IncludedProperty"};
+
+            var properties = new List<LogEventProperty> {
+                new LogEventProperty("IncludedProperty", new ScalarValue(includedPropertyValue)),
+                new LogEventProperty("AdditionalProperty", new ScalarValue(excludedPropertyValue))
+            };
+
+            var template = new MessageTemplateParser().Parse(messageTemplate);
+            var logEvent = new LogEvent(DateTime.Now, LogEventLevel.Information, null, template, properties);
+
+            var entity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, null, null, new PropertiesKeyGenerator(), includedProperties, true);
+
+            Assert.True(entity.Properties.ContainsKey("IncludedProperty"));
+            Assert.False(entity.Properties.ContainsKey("AdditionalProperty"));
+        }
+
+        [Fact]
+        public void CreateEntityWithAdditionalPropertiesShouldAddUnspecifiedProperties()
+        {
+            const string messageTemplate = "{IncludedProperty} {AdditionalProperty}";
+            const string includedPropertyValue = "included value";
+            const string excludedPropertyValue = "excluded value";
+            var includedProperties = new[] { "IncludedProperty" };
+
+            var properties = new List<LogEventProperty> {
+                new LogEventProperty("IncludedProperty", new ScalarValue(includedPropertyValue)),
+                new LogEventProperty("AdditionalProperty", new ScalarValue(excludedPropertyValue))
+            };
+
+            var template = new MessageTemplateParser().Parse(messageTemplate);
+            var logEvent = new LogEvent(DateTime.Now, LogEventLevel.Information, null, template, properties);
+
+            var entity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, null, null, new PropertiesKeyGenerator(), includedProperties);
+
+            Assert.True(entity.Properties.ContainsKey("IncludedProperty"));
+            Assert.True(entity.Properties.ContainsKey("AdditionalProperty"));
+        }
     }
 }
