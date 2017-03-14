@@ -16,6 +16,7 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
@@ -38,8 +39,9 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
         /// <param name="keyGenerator">The IKeyGenerator for the PartitionKey and RowKey</param>
+        /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
         /// <returns></returns>
-        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix, IKeyGenerator keyGenerator)
+        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix, IKeyGenerator keyGenerator, string[] propertyColumns = null)
         {
             var tableEntity = new DynamicTableEntity
             {
@@ -65,7 +67,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
             foreach (var logProperty in logEvent.Properties)
             {
-                isValid = IsValidColumnName(logProperty.Key);
+                isValid = IsValidColumnName(logProperty.Key) && ShouldIncludeProperty(logProperty.Key, propertyColumns);
 
                 // Don't add table properties for numeric property names
                 if (isValid && (count++ < _maxNumberOfPropertiesPerRow - 1))
@@ -101,6 +103,18 @@ namespace Serilog.Sinks.AzureTableStorage
             bool isValid = Regex.Match(propertyName, regex).Success;
 
             return isValid;
+        }
+
+        /// <summary>
+        /// Determines if the given property name exists in the specific columns. 
+        /// Note: If specific columns is not defined then the property name is considered valid. 
+        /// </summary>
+        /// <param name="propertyName">Name of the property to check</param>
+        /// <param name="propertyColumns">List of defined properties only to be added as columns</param>
+        /// <returns>true if the no propertyColumns are specified or it is included in the propertyColumns property</returns>
+        private static bool ShouldIncludeProperty(string propertyName, string[] propertyColumns)
+        {
+            return propertyColumns == null || propertyColumns.Contains(propertyName);
         }
     }
 }
