@@ -39,9 +39,9 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
         /// <param name="keyGenerator">The IKeyGenerator for the PartitionKey and RowKey</param>
-        /// <param name="specificProperties">Specific properties to be added to the table entity</param>
+        /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
         /// <returns></returns>
-        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix, IKeyGenerator keyGenerator, string[] specificProperties = null)
+        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix, IKeyGenerator keyGenerator, string[] propertyColumns = null)
         {
             var tableEntity = new DynamicTableEntity
             {
@@ -67,7 +67,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
             foreach (var logProperty in logEvent.Properties)
             {
-                isValid = IsValidColumnName(logProperty.Key) && IsValidSpecificColumn(logProperty.Key, specificProperties);
+                isValid = IsValidColumnName(logProperty.Key) && ShouldIncludeProperty(logProperty.Key, propertyColumns);
 
                 // Don't add table properties for numeric property names
                 if (isValid && (count++ < _maxNumberOfPropertiesPerRow - 1))
@@ -110,11 +110,11 @@ namespace Serilog.Sinks.AzureTableStorage
         /// Note: If specific columns is not defined then the property name is considered valid. 
         /// </summary>
         /// <param name="propertyName">Name of the property to check</param>
-        /// <param name="specificProperties">List of defined properties only to be added as columns</param>
-        /// <returns>true if the no specificColumns are specified or it is included in the specificColumns property</returns>
-        private static bool IsValidSpecificColumn(string propertyName, string[] specificProperties)
+        /// <param name="propertyColumns">List of defined properties only to be added as columns</param>
+        /// <returns>true if the no propertyColumns are specified or it is included in the propertyColumns property</returns>
+        private static bool ShouldIncludeProperty(string propertyName, string[] propertyColumns)
         {
-            return specificProperties == null || specificProperties.Contains(propertyName);
+            return propertyColumns == null || propertyColumns.Contains(propertyName);
         }
     }
 }
