@@ -18,6 +18,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Formatting;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
 namespace Serilog.Sinks.AzureTableStorage
@@ -30,6 +31,7 @@ namespace Serilog.Sinks.AzureTableStorage
         readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
         readonly IKeyGenerator _keyGenerator;
+        readonly ITextFormatter _textFormatter;
         readonly CloudTable _table;
 
         /// <summary>
@@ -39,14 +41,17 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="keyGenerator">generator used to generate partition keys and row keys</param>
+        /// <param name="textFormatter">The text formatter to format the data</param>
         public AzureTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             string storageTableName = null,
-            IKeyGenerator keyGenerator = null)
+            IKeyGenerator keyGenerator = null,
+            ITextFormatter textFormatter = null)
         {
             _formatProvider = formatProvider;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
+            _textFormatter = textFormatter;
             var tableClient = storageAccount.CreateCloudTableClient();
 
             if (string.IsNullOrEmpty(storageTableName))
@@ -68,7 +73,8 @@ namespace Serilog.Sinks.AzureTableStorage
                 logEvent,
                 _formatProvider,
                 _keyGenerator.GeneratePartitionKey(logEvent),
-                _keyGenerator.GenerateRowKey(logEvent)
+                _keyGenerator.GenerateRowKey(logEvent),
+                _textFormatter
                 );
 
             _table.ExecuteAsync(TableOperation.Insert(logEventEntity))

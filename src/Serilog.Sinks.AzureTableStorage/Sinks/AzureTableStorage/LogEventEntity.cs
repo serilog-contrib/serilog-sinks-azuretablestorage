@@ -17,6 +17,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
+using Serilog.Formatting;
 using Serilog.Formatting.Json;
 
 namespace Serilog.Sinks.AzureTableStorage
@@ -41,11 +42,13 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="partitionKey">partition key to store</param>
         /// <param name="rowKey">row key to store</param>
+        /// <param name="textFormatter">The text formatter to format the data</param>
         public LogEventEntity(
             LogEvent log,
             IFormatProvider formatProvider,
             string partitionKey,
-            string rowKey)
+            string rowKey,
+            ITextFormatter textFormatter)
         {
             Timestamp = log.Timestamp.ToUniversalTime().DateTime;
             PartitionKey = partitionKey;
@@ -55,7 +58,11 @@ namespace Serilog.Sinks.AzureTableStorage
             Exception = log.Exception?.ToString();
             RenderedMessage = log.RenderMessage(formatProvider);
             var s = new StringWriter();
-            new JsonFormatter(closingDelimiter: "", formatProvider: formatProvider).Format(log, s);
+            if (textFormatter == null)
+            {
+                textFormatter = new JsonFormatter(closingDelimiter: "", formatProvider: formatProvider);
+            }
+            textFormatter.Format(log, s);
             Data = s.ToString();
         }
 
@@ -83,7 +90,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// </summary>
         public string RenderedMessage { get; set; }
         /// <summary>
-        /// A JSON-serialised representation of the data attached to the log message.
+        /// A text-serialised representation of the data attached to the log message.
         /// </summary>
         public string Data { get; set; }
     }
