@@ -9,7 +9,7 @@ namespace Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator
     public class PropertiesKeyGenerator : DefaultKeyGenerator
     {
         // Valid RowKey name characters
-        static readonly Regex _rowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|\r\n?|\n)");
+        static readonly Regex _rowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|[\x00-\x1f]|[\x7f-\x9f])");
 
         /// <summary>
         /// Generate a valid string for a table property key by removing invalid characters
