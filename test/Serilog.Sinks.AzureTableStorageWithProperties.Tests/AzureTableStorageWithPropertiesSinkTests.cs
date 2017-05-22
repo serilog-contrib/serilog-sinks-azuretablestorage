@@ -54,14 +54,14 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         }
 
         [Fact]
-        public void WhenALoggerWritesToTheSinkWithAWindowsNewlineInTheTemplateItIsRetrievable()
+        public async Task WhenALoggerWritesToTheSinkWithAWindowsNewlineInTheTemplateItIsRetrievable()
         {
             // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
             var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
             var tableClient = storageAccount.CreateCloudTableClient();
             var table = tableClient.GetTableReference("LogEventEntity");
 
-            table.DeleteIfExists();
+            await table.DeleteIfExistsAsync();
 
             var logger = new LoggerConfiguration()
                 .WriteTo.AzureTableStorageWithProperties(storageAccount)
@@ -71,20 +71,20 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 
             logger.Information(messageTemplate);
 
-            var result = table.ExecuteQuery(new TableQuery().Take(1)).FirstOrDefault();
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
             Assert.NotNull(result);
         }
 
         [Fact]
-        public void WhenALoggerWritesToTheSinkWithALineFeedInTheTemplateItIsRetrievable()
+        public async Task WhenALoggerWritesToTheSinkWithALineFeedInTheTemplateItIsRetrievable()
         {
             // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
             var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
             var tableClient = storageAccount.CreateCloudTableClient();
             var table = tableClient.GetTableReference("LogEventEntity");
 
-            table.DeleteIfExists();
+            await table.DeleteIfExistsAsync();
 
             var logger = new LoggerConfiguration()
                 .WriteTo.AzureTableStorageWithProperties(storageAccount)
@@ -94,20 +94,20 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 
             logger.Information(messageTemplate);
 
-            var result = table.ExecuteQuery(new TableQuery().Take(1)).FirstOrDefault();
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
             Assert.NotNull(result);
         }
 
         [Fact]
-        public void WhenALoggerWritesToTheSinkWithACarriageReturnInTheTemplateItIsRetrievable()
+        public async Task WhenALoggerWritesToTheSinkWithACarriageReturnInTheTemplateItIsRetrievable()
         {
             // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
             var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
             var tableClient = storageAccount.CreateCloudTableClient();
             var table = tableClient.GetTableReference("LogEventEntity");
 
-            table.DeleteIfExists();
+            await table.DeleteIfExistsAsync();
 
             var logger = new LoggerConfiguration()
                 .WriteTo.AzureTableStorageWithProperties(storageAccount)
@@ -117,7 +117,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 
             logger.Information(messageTemplate);
 
-            var result = table.ExecuteQuery(new TableQuery().Take(1)).FirstOrDefault();
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
             Assert.NotNull(result);
         }
