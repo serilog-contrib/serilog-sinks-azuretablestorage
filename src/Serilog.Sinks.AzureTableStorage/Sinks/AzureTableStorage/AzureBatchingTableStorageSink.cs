@@ -21,6 +21,7 @@ using Serilog.Events;
 
 using Serilog.Sinks.PeriodicBatching;
 using System.Threading.Tasks;
+using Serilog.Formatting;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
 namespace Serilog.Sinks.AzureTableStorage
@@ -33,6 +34,7 @@ namespace Serilog.Sinks.AzureTableStorage
         readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
         private readonly IKeyGenerator _keyGenerator;
+        private readonly ITextFormatter _textFormatter;
         readonly CloudTable _table;
 
         /// <summary>
@@ -43,13 +45,15 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
+        /// <param name="textFormatter">The text formatter to format the data</param>
         public AzureBatchingTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             int batchSizeLimit,
             TimeSpan period,
-            string storageTableName = null)
-            : this(storageAccount, formatProvider, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator())
+            string storageTableName = null,
+            ITextFormatter textFormatter = null)
+            : this(storageAccount, formatProvider, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator(), textFormatter)
             
         {
         }
@@ -63,19 +67,22 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="keyGenerator">generator used for partition keys and row keys</param>
+        /// <param name="textFormatter">The text formatter to format the data</param>
         public AzureBatchingTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             int batchSizeLimit,
             TimeSpan period,
             string storageTableName = null,
-            IKeyGenerator keyGenerator = null)
+            IKeyGenerator keyGenerator = null,
+            ITextFormatter textFormatter = null)
             : base(batchSizeLimit, period)
         {
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
                 throw new ArgumentException("batchSizeLimit must be between 1 and 100 for Azure Table Storage");
 
             _formatProvider = formatProvider;
+            _textFormatter = textFormatter;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
             var tableClient = storageAccount.CreateCloudTableClient();
 
@@ -108,7 +115,8 @@ namespace Serilog.Sinks.AzureTableStorage
                     logEvent,
                     _formatProvider,
                     partitionKey,
-                    _keyGenerator.GenerateRowKey(logEvent)
+                    _keyGenerator.GenerateRowKey(logEvent),
+                    _textFormatter
                     );
                 operation.Add(TableOperation.Insert(logEventEntity));
             }
