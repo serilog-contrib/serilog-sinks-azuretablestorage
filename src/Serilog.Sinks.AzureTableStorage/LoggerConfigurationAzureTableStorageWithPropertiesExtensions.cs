@@ -18,6 +18,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage;
 using System;
+using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
 namespace Serilog
 {
@@ -50,6 +51,8 @@ namespace Serilog
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
+        /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
+        /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureTableStorageWithProperties(
@@ -61,14 +64,27 @@ namespace Serilog
             bool writeInBatches = false,
             TimeSpan? period = null,
             int? batchPostingLimit = null,
-            string additionalRowKeyPostfix = null)
+            string additionalRowKeyPostfix = null,
+            IKeyGenerator keyGenerator = null,
+            string[] propertyColumns = null)
         {
             if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
             if (storageAccount == null) throw new ArgumentNullException("storageAccount");
 
-            var sink = writeInBatches ?
-                (ILogEventSink)new AzureBatchingTableStorageWithPropertiesSink(storageAccount, formatProvider, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, additionalRowKeyPostfix) :
-                new AzureTableStorageWithPropertiesSink(storageAccount, formatProvider, storageTableName, additionalRowKeyPostfix);
+            ILogEventSink sink;
+
+            try
+            {
+                sink = writeInBatches
+                    ? (ILogEventSink)
+                    new AzureBatchingTableStorageWithPropertiesSink(storageAccount, formatProvider, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, additionalRowKeyPostfix, keyGenerator, propertyColumns)
+                    : new AzureTableStorageWithPropertiesSink(storageAccount, formatProvider, storageTableName, additionalRowKeyPostfix, keyGenerator, propertyColumns);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine("Error configuring AzureTableStorageWithProperties: {0}", ex);
+                sink = new LoggerConfiguration().CreateLogger();
+            }
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }
@@ -86,6 +102,8 @@ namespace Serilog
         /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
         /// <param name="period">The time to wait between checking for event batches.</param>
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
+        /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
+        /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureTableStorageWithProperties(
@@ -97,12 +115,25 @@ namespace Serilog
             bool writeInBatches = false,
             TimeSpan? period = null,
             int? batchPostingLimit = null,
-            string additionalRowKeyPostfix = null)
+            string additionalRowKeyPostfix = null,
+            IKeyGenerator keyGenerator = null, 
+            string[] propertyColumns = null)
         {
             if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
             if (String.IsNullOrEmpty(connectionString)) throw new ArgumentNullException("connectionString");
-            var storageAccount = CloudStorageAccount.Parse(connectionString);
-            return AzureTableStorageWithProperties(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, additionalRowKeyPostfix);
+
+            try
+            {
+                var storageAccount = CloudStorageAccount.Parse(connectionString);
+                return AzureTableStorageWithProperties(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, additionalRowKeyPostfix, keyGenerator, propertyColumns);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine("Error configuring AzureTableStorageWithProperties: {0}", ex);
+
+                ILogEventSink sink = new LoggerConfiguration().CreateLogger();
+                return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
+            }
         }
     }
 }

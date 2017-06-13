@@ -17,7 +17,10 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
 using System;
+using System.Collections.Generic;
 using System.Threading;
+using Serilog.Sinks.AzureTableStorage.KeyGenerator;
+using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -30,6 +33,8 @@ namespace Serilog.Sinks.AzureTableStorage
         private readonly IFormatProvider _formatProvider;
         private readonly CloudTable _table;
         private readonly string _additionalRowKeyPostfix;
+        private readonly string[] _propertyColumns;
+        private readonly IKeyGenerator _keyGenerator;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -38,7 +43,9 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
-        public AzureTableStorageWithPropertiesSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, string storageTableName = null, string additionalRowKeyPostfix = null)
+        /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
+        /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
+        public AzureTableStorageWithPropertiesSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, string storageTableName = null, string additionalRowKeyPostfix = null, IKeyGenerator keyGenerator = null, string[] propertyColumns = null)
         {
             var tableClient = storageAccount.CreateCloudTableClient();
 
@@ -51,11 +58,9 @@ namespace Serilog.Sinks.AzureTableStorage
             _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
 
             _formatProvider = formatProvider;
-
-            if (additionalRowKeyPostfix != null)
-            {
-                _additionalRowKeyPostfix = AzureTableStorageEntityFactory.GetValidStringForTableKey(additionalRowKeyPostfix);
-            }
+            _additionalRowKeyPostfix = additionalRowKeyPostfix;
+            _propertyColumns = propertyColumns;
+            _keyGenerator = keyGenerator ?? new PropertiesKeyGenerator();
         }
 
         /// <summary>
@@ -64,8 +69,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="logEvent">The log event to write.</param>
         public void Emit(LogEvent logEvent)
         {
-            var op = TableOperation.Insert(
-                AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix));
+            var op = TableOperation.Insert(AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator, _propertyColumns));
 
             _table.ExecuteAsync(op).SyncContextSafeWait(_waitTimeoutMilliseconds);
         }

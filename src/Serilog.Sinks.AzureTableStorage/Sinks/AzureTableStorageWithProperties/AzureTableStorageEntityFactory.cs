@@ -16,9 +16,9 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using System.Linq;
 using System.Text.RegularExpressions;
+using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -27,9 +27,6 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public static class AzureTableStorageEntityFactory
     {
-        // Valid RowKey name characters
-        static readonly Regex _rowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|\r\n?|\n)");
-
         // Azure tables support a maximum of 255 properties. PartitionKey, RowKey and Timestamp
         // bring the maximum to 252.
         const int _maxNumberOfPropertiesPerRow = 252;
@@ -41,14 +38,17 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="logEvent">The event to log</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
+        /// <param name="keyGenerator">The IKeyGenerator for the PartitionKey and RowKey</param>
+        /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
         /// <returns></returns>
-        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix)
+        public static DynamicTableEntity CreateEntityWithProperties(LogEvent logEvent, IFormatProvider formatProvider, string additionalRowKeyPostfix, IKeyGenerator keyGenerator, string[] propertyColumns = null)
         {
-            var tableEntity = new DynamicTableEntity();
-
-            tableEntity.PartitionKey = GenerateValidPartitionKey(logEvent);
-            tableEntity.RowKey = GenerateValidRowKey(logEvent, additionalRowKeyPostfix);
-            tableEntity.Timestamp = logEvent.Timestamp;
+            var tableEntity = new DynamicTableEntity
+            {
+                PartitionKey = keyGenerator.GeneratePartitionKey(logEvent),
+                RowKey = keyGenerator.GenerateRowKey(logEvent, additionalRowKeyPostfix),
+                Timestamp = logEvent.Timestamp
+            };
 
             var dynamicProperties = tableEntity.Properties;
 
@@ -61,12 +61,16 @@ namespace Serilog.Sinks.AzureTableStorage
                 dynamicProperties.Add("Exception", new EntityProperty(logEvent.Exception.ToString()));
             }
 
-
             List<KeyValuePair<ScalarValue, LogEventPropertyValue>> additionalData = null;
-            int count = dynamicProperties.Count;
+            var count = dynamicProperties.Count;
+            bool isValid;
+
             foreach (var logProperty in logEvent.Properties)
             {
-                if (count++ < _maxNumberOfPropertiesPerRow - 1)
+                isValid = IsValidColumnName(logProperty.Key) && ShouldIncludeProperty(logProperty.Key, propertyColumns);
+
+                // Don't add table properties for numeric property names
+                if (isValid && (count++ < _maxNumberOfPropertiesPerRow - 1))
                 {
                     dynamicProperties.Add(logProperty.Key, AzurePropertyFormatter.ToEntityProperty(logProperty.Value, null, formatProvider));
                 }
@@ -89,61 +93,28 @@ namespace Serilog.Sinks.AzureTableStorage
         }
 
         /// <summary>
-        /// Generate a valid string for a table property key by removing invalid characters
+        /// Determines whether or not the given property names conforms to naming rules for C# identifiers
         /// </summary>
-        /// <param name="s">
-        /// The input string
-        /// </param>
-        /// <returns>
-        /// The string that can be used as a property
-        /// </returns>
-        public static string GetValidStringForTableKey(string s)
+        /// <param name="propertyName">Name of the property to check</param>
+        /// <returns>true if the property name conforms to C# identifier naming rules and can therefore be added as a table property</returns>
+        private static bool IsValidColumnName(string propertyName)
         {
-            return _rowKeyNotAllowedMatch.Replace(s, "");
+            string regex = @"^(?:((?!\d)\w+(?:\.(?!\d)\w+)*)\.)?((?!\d)\w+)$";
+            bool isValid = Regex.Match(propertyName, regex).Success;
+
+            return isValid;
         }
 
-        // Generate a valid partition key from event timestamp.
-        private static string GenerateValidPartitionKey(LogEvent logEvent)
+        /// <summary>
+        /// Determines if the given property name exists in the specific columns. 
+        /// Note: If specific columns is not defined then the property name is considered valid. 
+        /// </summary>
+        /// <param name="propertyName">Name of the property to check</param>
+        /// <param name="propertyColumns">List of defined properties only to be added as columns</param>
+        /// <returns>true if the no propertyColumns are specified or it is included in the propertyColumns property</returns>
+        private static bool ShouldIncludeProperty(string propertyName, string[] propertyColumns)
         {
-            // Like WAD, round the timestamp the minute.
-            return "0" + new DateTime(
-                logEvent.Timestamp.Year,
-                logEvent.Timestamp.Month,
-                logEvent.Timestamp.Day,
-                logEvent.Timestamp.Hour,
-                logEvent.Timestamp.Minute,
-                0).Ticks;
-        }
-
-        // Generate a valid Row Key by joining postfix and prefix. If longer
-        // than 1K, prefix is truncated.
-        // See http://msdn.microsoft.com/en-us/library/windowsazure/dd179338.aspx
-        private static string GenerateValidRowKey(LogEvent logEvent, string additionalRowKeyPostfix)
-        {
-            var prefixBuilder = new StringBuilder(512);
-
-            // Join level and message template
-            prefixBuilder.Append(logEvent.Level).Append('|').Append(GetValidStringForTableKey(logEvent.MessageTemplate.Text));
-
-            var postfixBuilder = new StringBuilder(512);
-
-            if (additionalRowKeyPostfix != null)
-            {
-                // additionalRowKeyPostfix is already stripped of invalid characters
-                postfixBuilder.Append('|').Append(additionalRowKeyPostfix);
-            }
-
-            // Append GUID to postfix
-            postfixBuilder.Append('|').Append(Guid.NewGuid());
-
-            // Truncate prefix if too long
-            var maxPrefixLength = 1024 - postfixBuilder.Length;
-            if (prefixBuilder.Length > maxPrefixLength)
-            {
-                prefixBuilder.Length = maxPrefixLength;
-            }
-
-            return prefixBuilder.Append(postfixBuilder).ToString();
+            return propertyColumns == null || propertyColumns.Contains(propertyName);
         }
     }
 }

@@ -25,15 +25,8 @@ namespace Serilog.Sinks.AzureTableStorage
     /// <summary>
     /// Represents a single log event for the Serilog Azure Table Storage Sink.
     /// </summary>
-    /// <remarks>
-    /// The PartitionKey is set to "0" followed by the ticks of the log event time (in UTC) as per what Azure Diagnostics logging has.
-    /// The RowKey is set to "{Level}|{MessageTemplate}" to allow you to search for certain categories of log messages or indeed for a
-    ///     specific log message quickly using the indexing in Azure Table Storage.
-    /// </remarks>
     public class LogEventEntity : TableEntity
     {
-        static readonly Regex RowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|[\x00-\x1f]|[\x7f-\x9f])");
-
         /// <summary>
         /// Default constructor for the Storage Client library to re-hydrate entities when querying.
         /// </summary>
@@ -44,15 +37,20 @@ namespace Serilog.Sinks.AzureTableStorage
         /// </summary>
         /// <param name="log">The event to log</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
-        /// <param name="partitionKey"></param>
-        public LogEventEntity(LogEvent log, IFormatProvider formatProvider, long partitionKey)
+        /// <param name="partitionKey">partition key to store</param>
+        /// <param name="rowKey">row key to store</param>
+        public LogEventEntity(
+            LogEvent log,
+            IFormatProvider formatProvider,
+            string partitionKey,
+            string rowKey)
         {
             Timestamp = log.Timestamp.ToUniversalTime().DateTime;
-            PartitionKey = string.Format("0{0}", partitionKey);
-            RowKey = GetValidRowKey(string.Format("{0}|{1}", log.Level, log.MessageTemplate.Text));
+            PartitionKey = partitionKey;
+            RowKey = GetValidRowKey(rowKey);
             MessageTemplate = log.MessageTemplate.Text;
             Level = log.Level.ToString();
-            Exception = log.Exception != null ? log.Exception.ToString() : null;
+            Exception = log.Exception?.ToString();
             RenderedMessage = log.RenderMessage(formatProvider);
             var s = new StringWriter();
             new JsonFormatter(closingDelimiter: "", formatProvider: formatProvider).Format(log, s);
@@ -62,7 +60,7 @@ namespace Serilog.Sinks.AzureTableStorage
         // http://msdn.microsoft.com/en-us/library/windowsazure/dd179338.aspx
         static string GetValidRowKey(string rowKey)
         {
-            rowKey = RowKeyNotAllowedMatch.Replace(rowKey, "");
+            rowKey = ObjectNaming.KeyFieldValueCharactersNotAllowedMatch.Replace(rowKey, "");
             return rowKey.Length > 1024 ? rowKey.Substring(0, 1024) : rowKey;
         }
 

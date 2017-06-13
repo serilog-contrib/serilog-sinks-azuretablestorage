@@ -54,6 +54,75 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         }
 
         [Fact]
+        public async Task WhenALoggerWritesToTheSinkWithAWindowsNewlineInTheTemplateItIsRetrievable()
+        {
+            // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
+            var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
+            var tableClient = storageAccount.CreateCloudTableClient();
+            var table = tableClient.GetTableReference("LogEventEntity");
+
+            await table.DeleteIfExistsAsync();
+
+            var logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .CreateLogger();
+
+            const string messageTemplate = "Line 1\r\nLine2";
+
+            logger.Information(messageTemplate);
+
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
+
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task WhenALoggerWritesToTheSinkWithALineFeedInTheTemplateItIsRetrievable()
+        {
+            // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
+            var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
+            var tableClient = storageAccount.CreateCloudTableClient();
+            var table = tableClient.GetTableReference("LogEventEntity");
+
+            await table.DeleteIfExistsAsync();
+
+            var logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .CreateLogger();
+
+            const string messageTemplate = "Line 1\nLine2";
+
+            logger.Information(messageTemplate);
+
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
+
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task WhenALoggerWritesToTheSinkWithACarriageReturnInTheTemplateItIsRetrievable()
+        {
+            // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
+            var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
+            var tableClient = storageAccount.CreateCloudTableClient();
+            var table = tableClient.GetTableReference("LogEventEntity");
+
+            await table.DeleteIfExistsAsync();
+
+            var logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .CreateLogger();
+
+            const string messageTemplate = "Line 1\rLine2";
+
+            logger.Information(messageTemplate);
+
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
+
+            Assert.NotNull(result);
+        }
+
+        [Fact]
         public async Task WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForScalar()
         {
             var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
@@ -215,6 +284,51 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         }
 
         [Fact]
+        public async Task WhenALoggerWritesToTheSinkItAllowsStringFormatNumericPropertyNames()
+        {
+            var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
+            var tableClient = storageAccount.CreateCloudTableClient();
+            var table = tableClient.GetTableReference("LogEventEntity");
+
+            await table.DeleteIfExistsAsync();
+
+            var logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .CreateLogger();
+
+            var expectedResult = "Hello \"world\"";
+
+            logger.Information("Hello {0}", "world");
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
+
+            Assert.Equal(expectedResult, result.Properties["RenderedMessage"].StringValue);
+        }
+
+        [Fact]
+        public async Task WhenALoggerWritesToTheSinkItAllowsNamedAndNumericPropertyNames()
+        {
+            var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
+            var tableClient = storageAccount.CreateCloudTableClient();
+            var table = tableClient.GetTableReference("LogEventEntity");
+
+            await table.DeleteIfExistsAsync();
+
+            var logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .CreateLogger();
+
+            var name = "John Smith";
+            var expectedResult = "Hello \"world\" this is \"John Smith\" 1234";
+
+            logger.Information("Hello {0} this is {Name} {_1234}", "world", name, 1234);
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
+
+            Assert.Equal(expectedResult, result.Properties["RenderedMessage"].StringValue);
+            Assert.Equal(name, result.Properties["Name"].StringValue);
+            Assert.Equal(1234, result.Properties["_1234"].Int32Value);
+        }
+
+        [Fact]
         public async Task WhenABatchLoggerWritesToTheSinkItStoresAllTheEntries()
         {
             var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
@@ -293,5 +407,52 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             Assert.Equal(300, result.Count);
         }
 
+        [Fact]
+        public void WhenALoggerUsesAnUnreachableStorageServiceItDoesntFail()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorage("DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=/////////////////////////////////////////////////////////////////////////////////////w==;BlobEndpoint=http://127.0.0.1:16660/devstoreaccount1;TableEndpoint=http://127.0.0.1:16662/devstoreaccount1;QueueEndpoint=http://127.0.0.1:16661/devstoreaccount1;")
+                .CreateLogger();
+
+            Log.Information("This should silently work, even though the connection string points to invalid endpoints");
+
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void WhenALoggerWithPropertiesUsesAnUnreachableStorageServiceItDoesntFail()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties("DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=/////////////////////////////////////////////////////////////////////////////////////w==;BlobEndpoint=http://127.0.0.1:16660/devstoreaccount1;TableEndpoint=http://127.0.0.1:16662/devstoreaccount1;QueueEndpoint=http://127.0.0.1:16661/devstoreaccount1;")
+                .CreateLogger();
+
+            Log.Information("This should silently work, even though the connection string points to invalid endpoints");
+
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void WhenALoggerUsesAnInvalidStorageConnectionStringItDoesntFail()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorage("InvalidConnectionString!!!")
+                .CreateLogger();
+
+            Log.Information("This should silently work, even though the connection string is malformed");
+
+            Assert.True(true);
+        }
+
+        [Fact]
+        public void WhenALoggerWithPropertiesUsesAnInvalidStorageConnectionStringItDoesntFail()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties("InvalidConnectionString!!!")
+                .CreateLogger();
+
+            Log.Information("This should silently work, even though the connection string is malformed");
+
+            Assert.True(true);
+        }
     }
 }
