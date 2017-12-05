@@ -18,7 +18,6 @@ using System.Threading;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
-
 using Serilog.Sinks.PeriodicBatching;
 using System.Threading.Tasks;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
@@ -30,10 +29,10 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureBatchingTableStorageSink : PeriodicBatchingSink
     {
-        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        readonly IFormatProvider _formatProvider;
+        private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
+        private readonly IFormatProvider _formatProvider;
         private readonly IKeyGenerator _keyGenerator;
-        readonly CloudTable _table;
+        private readonly CloudTable _table;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -50,7 +49,6 @@ namespace Serilog.Sinks.AzureTableStorage
             TimeSpan period,
             string storageTableName = null)
             : this(storageAccount, formatProvider, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator())
-            
         {
         }
 
@@ -100,7 +98,7 @@ namespace Serilog.Sinks.AzureTableStorage
                     lastPartitionKey = partitionKey;
                     if (operation.Count > 0)
                     {
-                        await _table.ExecuteBatchAsync(operation);
+                        await _table.ExecuteBatchAsync(operation).ConfigureAwait(false);
                         operation = new TableBatchOperation();
                     }
                 }
@@ -114,7 +112,7 @@ namespace Serilog.Sinks.AzureTableStorage
             }
             if (operation.Count > 0)
             {
-                await _table.ExecuteBatchAsync(operation);
+                await _table.ExecuteBatchAsync(operation).ConfigureAwait(false);
             }
         }
     }

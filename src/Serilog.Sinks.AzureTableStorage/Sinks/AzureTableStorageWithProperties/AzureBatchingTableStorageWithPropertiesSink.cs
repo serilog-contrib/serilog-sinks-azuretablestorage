@@ -56,7 +56,7 @@ namespace Serilog.Sinks.AzureTableStorage
             TimeSpan period,
             string storageTableName = null,
             string additionalRowKeyPostfix = null,
-            IKeyGenerator keyGenerator = null, 
+            IKeyGenerator keyGenerator = null,
             string[] propertyColumns = null)
             : base(batchSizeLimit, period)
         {
@@ -101,7 +101,7 @@ namespace Serilog.Sinks.AzureTableStorage
                     // If there is an operation currently in use, execute it
                     if (operation != null)
                     {
-                        await _table.ExecuteBatchAsync(operation);
+                        await _table.ExecuteBatchAsync(operation).ConfigureAwait(false);
                     }
 
                     // Create a new batch operation and zero count
@@ -116,7 +116,7 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             // Execute last batch
-            await _table.ExecuteBatchAsync(operation);
+            await _table.ExecuteBatchAsync(operation).ConfigureAwait(false);
         }
     }
 }

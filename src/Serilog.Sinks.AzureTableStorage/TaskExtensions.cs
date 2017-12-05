@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
-    static class TaskExtensions
+    public static class TaskExtensions
     {
         public static bool SyncContextSafeWait(this Task task, int timeout = Timeout.Infinite)
         {
@@ -20,6 +20,5 @@ namespace Serilog.Sinks.AzureTableStorage
                 SynchronizationContext.SetSynchronizationContext(prevContext);
             }
         }
-
     }
 }

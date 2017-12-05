@@ -65,8 +65,8 @@ namespace Serilog
             int? batchPostingLimit = null,
             IKeyGenerator keyGenerator = null)
         {
-            if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
-            if (storageAccount == null) throw new ArgumentNullException("storageAccount");
+            if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
+            if (storageAccount == null) throw new ArgumentNullException(nameof(storageAccount));
 
             ILogEventSink sink;
 
@@ -112,8 +112,8 @@ namespace Serilog
             int? batchPostingLimit = null,
             IKeyGenerator keyGenerator = null)
         {
-            if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
-            if (String.IsNullOrEmpty(connectionString)) throw new ArgumentNullException("connectionString");
+            if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
+            if (String.IsNullOrEmpty(connectionString)) throw new ArgumentNullException(nameof(connectionString));
 
             try
             {

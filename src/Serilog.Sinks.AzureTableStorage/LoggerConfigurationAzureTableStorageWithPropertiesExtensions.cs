@@ -68,8 +68,8 @@ namespace Serilog
             IKeyGenerator keyGenerator = null,
             string[] propertyColumns = null)
         {
-            if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
-            if (storageAccount == null) throw new ArgumentNullException("storageAccount");
+            if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
+            if (storageAccount == null) throw new ArgumentNullException(nameof(storageAccount));
 
             ILogEventSink sink;
 
@@ -116,11 +116,11 @@ namespace Serilog
             TimeSpan? period = null,
             int? batchPostingLimit = null,
             string additionalRowKeyPostfix = null,
-            IKeyGenerator keyGenerator = null, 
+            IKeyGenerator keyGenerator = null,
             string[] propertyColumns = null)
         {
-            if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
-            if (String.IsNullOrEmpty(connectionString)) throw new ArgumentNullException("connectionString");
+            if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
+            if (String.IsNullOrEmpty(connectionString)) throw new ArgumentNullException(nameof(connectionString));
 
             try
             {
