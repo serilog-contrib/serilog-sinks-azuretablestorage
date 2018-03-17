@@ -39,11 +39,13 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="keyGenerator">generator used to generate partition keys and row keys</param>
+        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
         public AzureTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             string storageTableName = null,
-            IKeyGenerator keyGenerator = null)
+            IKeyGenerator keyGenerator = null,
+            bool bypassTableCreationValidation = false)
         {
             _formatProvider = formatProvider;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
@@ -55,18 +57,18 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             _table = tableClient.GetTableReference(storageTableName);
+
             // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
-            // it does not already exists. So, we first check if the table exists, and if it does not, we
-            // try to create it. If creation fails, we probably do not have enough permissions, so we throw exception.
-            if (!_table.ExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds))
+            // it does not already exists. So, if we are in that case, we ignore the error as per bypassTableCreationValidation.
+            try
             {
-                try
+                _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
+                if (!bypassTableCreationValidation)
                 {
-                    _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
-                }
-                catch (Exception ex)
-                {
-                    Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
                     throw;
                 }
             }

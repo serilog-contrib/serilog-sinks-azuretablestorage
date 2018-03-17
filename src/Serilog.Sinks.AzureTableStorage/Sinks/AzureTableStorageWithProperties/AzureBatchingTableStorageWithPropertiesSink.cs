@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
-using Serilog.Events;
-using Serilog.Sinks.PeriodicBatching;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Table;
+using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
+using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -49,6 +49,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
         /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
         /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
+        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         public AzureBatchingTableStorageWithPropertiesSink(CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
@@ -57,7 +58,8 @@ namespace Serilog.Sinks.AzureTableStorage
             string storageTableName = null,
             string additionalRowKeyPostfix = null,
             IKeyGenerator keyGenerator = null,
-            string[] propertyColumns = null)
+            string[] propertyColumns = null,
+            bool bypassTableCreationValidation = false)
             : base(batchSizeLimit, period)
         {
             var tableClient = storageAccount.CreateCloudTableClient();
@@ -68,7 +70,19 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+
+            try
+            {
+                _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
+                if (!bypassTableCreationValidation)
+                {
+                    throw;
+                }
+            }
 
             _formatProvider = formatProvider;
             _additionalRowKeyPostfix = additionalRowKeyPostfix;

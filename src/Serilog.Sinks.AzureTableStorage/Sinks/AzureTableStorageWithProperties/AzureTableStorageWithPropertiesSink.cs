@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Threading;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
-using System;
-using System.Threading;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
 
@@ -44,7 +44,14 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
         /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
         /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
-        public AzureTableStorageWithPropertiesSink(CloudStorageAccount storageAccount, IFormatProvider formatProvider, string storageTableName = null, string additionalRowKeyPostfix = null, IKeyGenerator keyGenerator = null, string[] propertyColumns = null)
+        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
+        public AzureTableStorageWithPropertiesSink(CloudStorageAccount storageAccount,
+            IFormatProvider formatProvider,
+            string storageTableName = null,
+            string additionalRowKeyPostfix = null,
+            IKeyGenerator keyGenerator = null,
+            string[] propertyColumns = null,
+            bool bypassTableCreationValidation = false)
         {
             var tableClient = storageAccount.CreateCloudTableClient();
 
@@ -54,7 +61,19 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+
+            try
+            {
+                _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
+                if (!bypassTableCreationValidation)
+                {
+                    throw;
+                }
+            }
 
             _formatProvider = formatProvider;
             _additionalRowKeyPostfix = additionalRowKeyPostfix;
