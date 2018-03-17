@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage;
-using System;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
 namespace Serilog
@@ -39,7 +40,7 @@ namespace Serilog
         public static readonly TimeSpan DefaultPeriod = TimeSpan.FromSeconds(2);
 
         /// <summary>
-        /// Adds a sink that writes log events as records in the 'LogEventEntity' Azure Table Storage table in the given storage account.
+        /// Adds a sink that writes log events as records in an Azure Table Storage table (default LogEventEntity) using the given storage account.
         /// </summary>
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
@@ -82,7 +83,7 @@ namespace Serilog
             }
             catch (Exception ex)
             {
-                Debugging.SelfLog.WriteLine("Error configuring AzureTableStorageWithProperties: {0}", ex);
+                Debugging.SelfLog.WriteLine($"Error configuring AzureTableStorageWithProperties: {ex}");
                 sink = new LoggerConfiguration().CreateLogger();
             }
 
@@ -90,7 +91,8 @@ namespace Serilog
         }
 
         /// <summary>
-        /// Adds a sink that writes log events as records in the 'LogEventEntity' Azure Table Storage table in the given storage account.
+        /// Adds a sink that writes log events as records in Azure Table Storage table (default name LogEventEntity) using the given
+        /// storage account connection string.
         /// </summary>
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="connectionString">The Cloud Storage Account connection string to use to insert the log entries to.</param>
@@ -129,11 +131,66 @@ namespace Serilog
             }
             catch (Exception ex)
             {
-                Debugging.SelfLog.WriteLine("Error configuring AzureTableStorageWithProperties: {0}", ex);
+                Debugging.SelfLog.WriteLine($"Error configuring AzureTableStorageWithProperties: {ex}");
 
                 ILogEventSink sink = new LoggerConfiguration().CreateLogger();
                 return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
             }
+        }
+
+        /// <summary>
+        /// Adds a sink that writes log events as records in Azure Table Storage table (default name LogEventEntity) using the given
+        /// storage account name and Shared Access Signature (SAS) URL.
+        /// </summary>
+        /// <param name="loggerConfiguration">The logger configuration.</param>
+        /// <param name="accountName"></param>
+        /// <param name="sharedAccessSignature"></param>
+        /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
+        /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
+        /// key used for the events so is not enabled by default.</param>
+        /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
+        /// <param name="period">The time to wait between checking for event batches.</param>
+        /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
+        /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
+        /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
+        /// <returns>Logger configuration, allowing configuration to continue.</returns>
+        /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
+        /// /// <exception cref="ArgumentException">A required parameter is empty.</exception>
+        public static LoggerConfiguration AzureTableStorageWithProperties(
+            this LoggerSinkConfiguration loggerConfiguration,
+            string accountName,
+            string sharedAccessSignature,
+            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
+            IFormatProvider formatProvider = null,
+            string storageTableName = null,
+            bool writeInBatches = false,
+            TimeSpan? period = null,
+            int? batchPostingLimit = null,
+            string additionalRowKeyPostfix = null,
+            IKeyGenerator keyGenerator = null,
+            string[] propertyColumns = null)
+        {
+            if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
+            if (string.IsNullOrWhiteSpace(accountName)) throw new ArgumentException(nameof(accountName));
+            if (string.IsNullOrWhiteSpace(sharedAccessSignature)) throw new ArgumentException(nameof(sharedAccessSignature));
+
+            try
+            {
+                var credentials = new StorageCredentials(sharedAccessSignature);
+                var storageAccount = new CloudStorageAccount(credentials, accountName, endpointSuffix: null, useHttps: true);
+
+                return AzureTableStorageWithProperties(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, additionalRowKeyPostfix, keyGenerator, propertyColumns);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine($"Error configuring AzureTableStorageWithProperties: {ex}");
+
+                ILogEventSink sink = new LoggerConfiguration().CreateLogger();
+                return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
+            }
+
         }
     }
 }

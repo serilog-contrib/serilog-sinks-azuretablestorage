@@ -55,7 +55,21 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+            // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
+            // it does not already exists. So, we first check if the table exists, and if it does not, we
+            // try to create it. If creation fails, we probably do not have enough permissions, so we throw exception.
+            if (!_table.ExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds))
+            {
+                try
+                {
+                    _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+                }
+                catch (Exception ex)
+                {
+                    Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
+                    throw;
+                }
+            }
         }
 
         /// <summary>
