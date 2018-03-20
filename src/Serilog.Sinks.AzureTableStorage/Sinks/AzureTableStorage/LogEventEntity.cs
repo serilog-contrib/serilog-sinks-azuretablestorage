@@ -14,7 +14,6 @@
 
 using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
 using Serilog.Formatting.Json;
@@ -58,7 +57,7 @@ namespace Serilog.Sinks.AzureTableStorage
         }
 
         // http://msdn.microsoft.com/en-us/library/windowsazure/dd179338.aspx
-        static string GetValidRowKey(string rowKey)
+        public static string GetValidRowKey(string rowKey)
         {
             rowKey = ObjectNaming.KeyFieldValueCharactersNotAllowedMatch.Replace(rowKey, "");
             return rowKey.Length > 1024 ? rowKey.Substring(0, 1024) : rowKey;

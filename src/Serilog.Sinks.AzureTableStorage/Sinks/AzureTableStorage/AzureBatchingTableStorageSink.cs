@@ -15,13 +15,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
-
-using Serilog.Sinks.PeriodicBatching;
-using System.Threading.Tasks;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
+using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -30,10 +29,10 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureBatchingTableStorageSink : PeriodicBatchingSink
     {
-        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        readonly IFormatProvider _formatProvider;
+        private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
+        private readonly IFormatProvider _formatProvider;
         private readonly IKeyGenerator _keyGenerator;
-        readonly CloudTable _table;
+        private readonly CloudTable _table;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -50,7 +49,6 @@ namespace Serilog.Sinks.AzureTableStorage
             TimeSpan period,
             string storageTableName = null)
             : this(storageAccount, formatProvider, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator())
-            
         {
         }
 
@@ -63,13 +61,15 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="keyGenerator">generator used for partition keys and row keys</param>
+        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
         public AzureBatchingTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             int batchSizeLimit,
             TimeSpan period,
             string storageTableName = null,
-            IKeyGenerator keyGenerator = null)
+            IKeyGenerator keyGenerator = null,
+            bool bypassTableCreationValidation = false)
             : base(batchSizeLimit, period)
         {
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
@@ -82,7 +82,21 @@ namespace Serilog.Sinks.AzureTableStorage
             if (string.IsNullOrEmpty(storageTableName)) storageTableName = typeof(LogEventEntity).Name;
 
             _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+
+            // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
+            // it does not already exists. So, if we are in that case, we ignore the error as per bypassTableCreationValidation.
+            try
+            {
+                _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
+                if (!bypassTableCreationValidation)
+                {
+                    throw;
+                }
+            }
         }
 
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
@@ -100,7 +114,7 @@ namespace Serilog.Sinks.AzureTableStorage
                     lastPartitionKey = partitionKey;
                     if (operation.Count > 0)
                     {
-                        await _table.ExecuteBatchAsync(operation);
+                        await _table.ExecuteBatchAsync(operation).ConfigureAwait(false);
                         operation = new TableBatchOperation();
                     }
                 }
@@ -114,7 +128,7 @@ namespace Serilog.Sinks.AzureTableStorage
             }
             if (operation.Count > 0)
             {
-                await _table.ExecuteBatchAsync(operation);
+                await _table.ExecuteBatchAsync(operation).ConfigureAwait(false);
             }
         }
     }
