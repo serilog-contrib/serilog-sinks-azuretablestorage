@@ -25,4 +25,7 @@
     <PackageReference Include="Serilog.Sinks.PeriodicBatching" Version="2.1.1" />
     <PackageReference Include="WindowsAzure.Storage" Version="9.1.0" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Sinks\AzureTableProvider\" />
+  </ItemGroup>
 </Project>
