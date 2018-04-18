@@ -71,7 +71,9 @@ namespace Serilog.Sinks.AzureTableStorage
             {
                 storageTableName = "LogEventEntity";
             }
-            _cloudTableProvider = rollOnDateChange ? null : new DefaultCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation);
+            _cloudTableProvider = rollOnDateChange
+                ? (ICloudTableProvider)new RollingCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation)
+                : new DefaultCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation);
 
             _formatProvider = formatProvider;
             _additionalRowKeyPostfix = additionalRowKeyPostfix;
