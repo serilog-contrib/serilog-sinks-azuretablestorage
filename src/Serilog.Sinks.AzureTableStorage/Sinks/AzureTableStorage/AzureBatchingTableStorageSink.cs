@@ -88,7 +88,9 @@ namespace Serilog.Sinks.AzureTableStorage
             {
                 storageTableName = typeof(LogEventEntity).Name;
             }
-            _cloudTableProvider = rollOnDateChange ? null : new DefaultCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation);
+            _cloudTableProvider = rollOnDateChange
+                ? (ICloudTableProvider)new RollingCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation)
+                : new DefaultCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation);
         }
 
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
