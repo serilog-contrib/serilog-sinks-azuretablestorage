@@ -20,6 +20,7 @@ using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.AzureTableStorage.Sinks;
+using Microsoft.WindowsAzure.Storage.Auth;
 
 namespace Serilog
 {
@@ -170,8 +171,9 @@ namespace Serilog
             IKeyGenerator keyGenerator = null,
             bool rollOnDateChange = false)
         {
-            if (loggerConfiguration == null) throw new ArgumentNullException("loggerConfiguration");
-            if (String.IsNullOrEmpty(connectionString)) throw new ArgumentNullException("connectionString");
+            if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
+            if (string.IsNullOrWhiteSpace(accountName)) throw new ArgumentNullException(nameof(accountName));
+            if (string.IsNullOrWhiteSpace(sharedAccessSignature)) throw new ArgumentNullException(nameof(sharedAccessSignature));
 
             try
             {

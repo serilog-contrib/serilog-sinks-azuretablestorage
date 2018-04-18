@@ -19,6 +19,8 @@ using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
+using System;
+using System.Threading;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
