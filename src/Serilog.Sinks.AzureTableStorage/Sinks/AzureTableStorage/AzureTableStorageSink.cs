@@ -18,6 +18,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
 namespace Serilog.Sinks.AzureTableStorage
@@ -27,10 +28,10 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureTableStorageSink : ILogEventSink
     {
-        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        readonly IFormatProvider _formatProvider;
-        readonly IKeyGenerator _keyGenerator;
-        readonly CloudTable _table;
+        private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
+        private readonly IFormatProvider _formatProvider;
+        private readonly IKeyGenerator _keyGenerator;
+        private readonly ICloudTableProvider _cloudTableProvider;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -39,23 +40,24 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="keyGenerator">generator used to generate partition keys and row keys</param>
+        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
+        /// <param name="rollOnDateChange">Roll on to create new table on date change.</param>
         public AzureTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             string storageTableName = null,
-            IKeyGenerator keyGenerator = null)
+            IKeyGenerator keyGenerator = null,
+            bool bypassTableCreationValidation = false,
+            bool rollOnDateChange = false)
         {
             _formatProvider = formatProvider;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
-            var tableClient = storageAccount.CreateCloudTableClient();
 
             if (string.IsNullOrEmpty(storageTableName))
             {
                 storageTableName = typeof(LogEventEntity).Name;
             }
-
-            _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+            _cloudTableProvider = rollOnDateChange ? null : new DefaultCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation);
         }
 
         /// <summary>
@@ -64,6 +66,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="logEvent">The log event to write.</param>
         public void Emit(LogEvent logEvent)
         {
+            var table = _cloudTableProvider.GetCloudTable();
             var logEventEntity = new LogEventEntity(
                 logEvent,
                 _formatProvider,
@@ -71,7 +74,7 @@ namespace Serilog.Sinks.AzureTableStorage
                 _keyGenerator.GenerateRowKey(logEvent)
                 );
 
-            _table.ExecuteAsync(TableOperation.Insert(logEventEntity))
+            table.ExecuteAsync(TableOperation.Insert(logEventEntity))
                 .SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
     }

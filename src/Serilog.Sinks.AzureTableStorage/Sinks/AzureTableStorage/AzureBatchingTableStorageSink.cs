@@ -18,7 +18,8 @@ using System.Threading;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
-
+using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
+using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.PeriodicBatching;
 using System.Threading.Tasks;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
@@ -33,7 +34,7 @@ namespace Serilog.Sinks.AzureTableStorage
         readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
         private readonly IKeyGenerator _keyGenerator;
-        readonly CloudTable _table;
+        private readonly ICloudTableProvider _cloudTableProvider;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -43,14 +44,15 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
+        /// <param name="rollOnDateChange">Roll on to create new table on date change.</param>
         public AzureBatchingTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             int batchSizeLimit,
             TimeSpan period,
-            string storageTableName = null)
-            : this(storageAccount, formatProvider, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator())
-            
+            string storageTableName = null,
+            bool rollOnDateChange = false)
+            : this(storageAccount, formatProvider, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator(), rollOnDateChange)
         {
         }
 
@@ -63,13 +65,17 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="keyGenerator">generator used for partition keys and row keys</param>
+        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
+        /// <param name="rollOnDateChange">Roll on to create new table on date change.</param>
         public AzureBatchingTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             int batchSizeLimit,
             TimeSpan period,
             string storageTableName = null,
-            IKeyGenerator keyGenerator = null)
+            IKeyGenerator keyGenerator = null,
+            bool bypassTableCreationValidation = false,
+            bool rollOnDateChange = false)
             : base(batchSizeLimit, period)
         {
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
@@ -77,16 +83,17 @@ namespace Serilog.Sinks.AzureTableStorage
 
             _formatProvider = formatProvider;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
-            var tableClient = storageAccount.CreateCloudTableClient();
 
-            if (string.IsNullOrEmpty(storageTableName)) storageTableName = typeof(LogEventEntity).Name;
-
-            _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+            if (string.IsNullOrEmpty(storageTableName))
+            {
+                storageTableName = typeof(LogEventEntity).Name;
+            }
+            _cloudTableProvider = rollOnDateChange ? null : new DefaultCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation);
         }
 
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
+            var table = _cloudTableProvider.GetCloudTable();
             TableBatchOperation operation = new TableBatchOperation();
 
             string lastPartitionKey = null;
@@ -100,7 +107,7 @@ namespace Serilog.Sinks.AzureTableStorage
                     lastPartitionKey = partitionKey;
                     if (operation.Count > 0)
                     {
-                        await _table.ExecuteBatchAsync(operation);
+                        await table.ExecuteBatchAsync(operation).ConfigureAwait(false);
                         operation = new TableBatchOperation();
                     }
                 }
@@ -114,7 +121,7 @@ namespace Serilog.Sinks.AzureTableStorage
             }
             if (operation.Count > 0)
             {
-                await _table.ExecuteBatchAsync(operation);
+                await table.ExecuteBatchAsync(operation).ConfigureAwait(false);
             }
         }
     }

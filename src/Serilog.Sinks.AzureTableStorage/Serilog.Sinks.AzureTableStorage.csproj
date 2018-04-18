@@ -112,5 +112,7 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Sinks\AzureTableProvider\" />
+  </ItemGroup>
 </Project>
