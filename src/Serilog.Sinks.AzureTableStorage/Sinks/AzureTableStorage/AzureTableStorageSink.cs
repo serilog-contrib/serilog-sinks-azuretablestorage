@@ -31,6 +31,7 @@ namespace Serilog.Sinks.AzureTableStorage
         private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         private readonly IFormatProvider _formatProvider;
         private readonly IKeyGenerator _keyGenerator;
+        private readonly CloudStorageAccount _storageAccount;
         private readonly ICloudTableProvider _cloudTableProvider;
 
         /// <summary>
@@ -41,14 +42,14 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="keyGenerator">generator used to generate partition keys and row keys</param>
         /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
-        /// <param name="rollOnDateChange">Roll on to create new table on date change.</param>
+        /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         public AzureTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             string storageTableName = null,
             IKeyGenerator keyGenerator = null,
             bool bypassTableCreationValidation = false,
-            bool rollOnDateChange = false)
+            ICloudTableProvider cloudTableProvider = null)
         {
             _formatProvider = formatProvider;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
@@ -57,9 +58,9 @@ namespace Serilog.Sinks.AzureTableStorage
             {
                 storageTableName = typeof(LogEventEntity).Name;
             }
-            _cloudTableProvider = rollOnDateChange
-                ? (ICloudTableProvider)new RollingCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation)
-                : new DefaultCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation);
+
+            _storageAccount = storageAccount;
+            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider(storageTableName, bypassTableCreationValidation);
         }
 
         /// <summary>
@@ -68,7 +69,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="logEvent">The log event to write.</param>
         public void Emit(LogEvent logEvent)
         {
-            var table = _cloudTableProvider.GetCloudTable();
+            var table = _cloudTableProvider.GetCloudTable(_storageAccount);
             var logEventEntity = new LogEventEntity(
                 logEvent,
                 _formatProvider,

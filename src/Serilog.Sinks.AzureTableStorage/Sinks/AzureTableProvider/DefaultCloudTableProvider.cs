@@ -22,25 +22,23 @@ namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
     public class DefaultCloudTableProvider : ICloudTableProvider
     {
         private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        private readonly CloudTableClient _cloudTableClient;
         private readonly string _storageTableName;
         private readonly bool _bypassTableCreationValidation;
         private CloudTable _cloudTable;
 
-        public DefaultCloudTableProvider(CloudStorageAccount storageAccount,
-                                         string storageTableName,
+        public DefaultCloudTableProvider(string storageTableName,
                                          bool bypassTableCreationValidation)
         {
-            _cloudTableClient = storageAccount.CreateCloudTableClient();
             _storageTableName = storageTableName;
             _bypassTableCreationValidation = bypassTableCreationValidation;
         }
 
-        public CloudTable GetCloudTable()
+        public CloudTable GetCloudTable(CloudStorageAccount storageAccount)
         {
             if (_cloudTable == null)
             {
-                _cloudTable = _cloudTableClient.GetTableReference(_storageTableName);
+                var cloudTableClient = storageAccount.CreateCloudTableClient();
+                _cloudTable = cloudTableClient.GetTableReference(_storageTableName);
 
                 // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
                 // it does not already exists. So, if we are in that case, we ignore the error as per bypassTableCreationValidation.

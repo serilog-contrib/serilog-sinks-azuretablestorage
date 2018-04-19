@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
 {
     public interface ICloudTableProvider
     {
-        CloudTable GetCloudTable();
+        CloudTable GetCloudTable(CloudStorageAccount storageAccount);
     }
 }

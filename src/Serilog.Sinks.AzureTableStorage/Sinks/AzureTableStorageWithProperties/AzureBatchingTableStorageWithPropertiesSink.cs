@@ -15,17 +15,14 @@
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
+using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
+using Serilog.Sinks.AzureTableStorage.KeyGenerator;
+using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
 using Serilog.Sinks.PeriodicBatching;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
-using Serilog.Events;
-using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
-using Serilog.Sinks.AzureTableStorage.KeyGenerator;
-using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -40,6 +37,7 @@ namespace Serilog.Sinks.AzureTableStorage
         private readonly string[] _propertyColumns;
         private const int _maxAzureOperationsPerBatch = 100;
         private readonly IKeyGenerator _keyGenerator;
+        private readonly CloudStorageAccount _storageAccount;
         private readonly ICloudTableProvider _cloudTableProvider;
 
         /// <summary>
@@ -54,7 +52,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
         /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
         /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
-        /// <param name="rollOnDateChange">Roll on to create new table on date change.</param>
+        /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         public AzureBatchingTableStorageWithPropertiesSink(CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
@@ -65,18 +63,16 @@ namespace Serilog.Sinks.AzureTableStorage
             IKeyGenerator keyGenerator = null,
             string[] propertyColumns = null,
             bool bypassTableCreationValidation = false,
-            bool rollOnDateChange = false)
+            ICloudTableProvider cloudTableProvider = null)
             : base(batchSizeLimit, period)
         {
-            var tableClient = storageAccount.CreateCloudTableClient();
-
             if (string.IsNullOrEmpty(storageTableName))
             {
                 storageTableName = "LogEventEntity";
             }
-            _cloudTableProvider = rollOnDateChange
-                ? (ICloudTableProvider)new RollingCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation)
-                : new DefaultCloudTableProvider(storageAccount, storageTableName, bypassTableCreationValidation);
+
+            _storageAccount = storageAccount;
+            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider(storageTableName, bypassTableCreationValidation);
 
             _formatProvider = formatProvider;
             _additionalRowKeyPostfix = additionalRowKeyPostfix;
@@ -86,7 +82,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
-            var table = _cloudTableProvider.GetCloudTable();
+            var table = _cloudTableProvider.GetCloudTable(_storageAccount);
             string lastPartitionKey = null;
             TableBatchOperation operation = null;
             var insertsPerOperation = 0;
