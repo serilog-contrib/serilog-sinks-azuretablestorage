@@ -29,13 +29,13 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureTableStorageWithPropertiesSink : ILogEventSink
     {
-        private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        private readonly IFormatProvider _formatProvider;
-        private readonly string _additionalRowKeyPostfix;
-        private readonly string[] _propertyColumns;
-        private readonly IKeyGenerator _keyGenerator;
-        private readonly CloudStorageAccount _storageAccount;
-        private readonly ICloudTableProvider _cloudTableProvider;
+        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
+        readonly IFormatProvider _formatProvider;
+        readonly string _additionalRowKeyPostfix;
+        readonly string[] _propertyColumns;
+        readonly IKeyGenerator _keyGenerator;
+        readonly CloudStorageAccount _storageAccount;
+        readonly ICloudTableProvider _cloudTableProvider;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.

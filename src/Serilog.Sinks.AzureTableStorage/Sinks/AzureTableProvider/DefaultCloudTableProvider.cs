@@ -19,12 +19,12 @@ using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
 {
-    public class DefaultCloudTableProvider : ICloudTableProvider
+    class DefaultCloudTableProvider : ICloudTableProvider
     {
-        private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        private readonly string _storageTableName;
-        private readonly bool _bypassTableCreationValidation;
-        private CloudTable _cloudTable;
+        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
+        readonly string _storageTableName;
+        readonly bool _bypassTableCreationValidation;
+        CloudTable _cloudTable;
 
         public DefaultCloudTableProvider(string storageTableName,
                                          bool bypassTableCreationValidation)
