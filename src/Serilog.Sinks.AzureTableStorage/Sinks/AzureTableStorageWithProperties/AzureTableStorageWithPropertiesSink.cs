@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Threading;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
+using System;
+using System.Threading;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -28,12 +29,13 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureTableStorageWithPropertiesSink : ILogEventSink
     {
-        private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        private readonly IFormatProvider _formatProvider;
-        private readonly CloudTable _table;
-        private readonly string _additionalRowKeyPostfix;
-        private readonly string[] _propertyColumns;
-        private readonly IKeyGenerator _keyGenerator;
+        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
+        readonly IFormatProvider _formatProvider;
+        readonly string _additionalRowKeyPostfix;
+        readonly string[] _propertyColumns;
+        readonly IKeyGenerator _keyGenerator;
+        readonly CloudStorageAccount _storageAccount;
+        readonly ICloudTableProvider _cloudTableProvider;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -45,35 +47,23 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
         /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
         /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
+        /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         public AzureTableStorageWithPropertiesSink(CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
             string storageTableName = null,
             string additionalRowKeyPostfix = null,
             IKeyGenerator keyGenerator = null,
             string[] propertyColumns = null,
-            bool bypassTableCreationValidation = false)
+            bool bypassTableCreationValidation = false,
+            ICloudTableProvider cloudTableProvider = null)
         {
-            var tableClient = storageAccount.CreateCloudTableClient();
-
             if (string.IsNullOrEmpty(storageTableName))
             {
                 storageTableName = "LogEventEntity";
             }
 
-            _table = tableClient.GetTableReference(storageTableName);
-
-            try
-            {
-                _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
-            }
-            catch (Exception ex)
-            {
-                Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
-                if (!bypassTableCreationValidation)
-                {
-                    throw;
-                }
-            }
+            _storageAccount = storageAccount;
+            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider(storageTableName, bypassTableCreationValidation);
 
             _formatProvider = formatProvider;
             _additionalRowKeyPostfix = additionalRowKeyPostfix;
@@ -87,9 +77,10 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="logEvent">The log event to write.</param>
         public void Emit(LogEvent logEvent)
         {
+            var table = _cloudTableProvider.GetCloudTable(_storageAccount);
             var op = TableOperation.Insert(AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator, _propertyColumns));
 
-            _table.ExecuteAsync(op).SyncContextSafeWait(_waitTimeoutMilliseconds);
+            table.ExecuteAsync(op).SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
     }
 }
