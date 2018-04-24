@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Table;
+using Serilog.Events;
+using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
+using Serilog.Sinks.AzureTableStorage.KeyGenerator;
+using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
+using Serilog.Sinks.PeriodicBatching;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
-using Serilog.Events;
-using Serilog.Sinks.AzureTableStorage.KeyGenerator;
-using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
 using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog.Sinks.AzureTableStorage
@@ -30,13 +32,14 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureBatchingTableStorageWithPropertiesSink : PeriodicBatchingSink
     {
-        private readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        private readonly IFormatProvider _formatProvider;
-        private readonly CloudTable _table;
-        private readonly string _additionalRowKeyPostfix;
-        private readonly string[] _propertyColumns;
-        private const int _maxAzureOperationsPerBatch = 100;
-        private readonly IKeyGenerator _keyGenerator;
+        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
+        readonly IFormatProvider _formatProvider;
+        readonly string _additionalRowKeyPostfix;
+        readonly string[] _propertyColumns;
+        const int _maxAzureOperationsPerBatch = 100;
+        readonly IKeyGenerator _keyGenerator;
+        readonly CloudStorageAccount _storageAccount;
+        readonly ICloudTableProvider _cloudTableProvider;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -50,6 +53,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
         /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
         /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
+        /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         public AzureBatchingTableStorageWithPropertiesSink(CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
@@ -59,30 +63,17 @@ namespace Serilog.Sinks.AzureTableStorage
             string additionalRowKeyPostfix = null,
             IKeyGenerator keyGenerator = null,
             string[] propertyColumns = null,
-            bool bypassTableCreationValidation = false)
+            bool bypassTableCreationValidation = false,
+            ICloudTableProvider cloudTableProvider = null)
             : base(batchSizeLimit, period)
         {
-            var tableClient = storageAccount.CreateCloudTableClient();
-
             if (string.IsNullOrEmpty(storageTableName))
             {
                 storageTableName = "LogEventEntity";
             }
 
-            _table = tableClient.GetTableReference(storageTableName);
-
-            try
-            {
-                _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
-            }
-            catch (Exception ex)
-            {
-                Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
-                if (!bypassTableCreationValidation)
-                {
-                    throw;
-                }
-            }
+            _storageAccount = storageAccount;
+            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider(storageTableName, bypassTableCreationValidation);
 
             _formatProvider = formatProvider;
             _additionalRowKeyPostfix = additionalRowKeyPostfix;
@@ -92,6 +83,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
+            var table = _cloudTableProvider.GetCloudTable(_storageAccount);
             string lastPartitionKey = null;
             TableBatchOperation operation = null;
             var insertsPerOperation = 0;
@@ -115,7 +107,7 @@ namespace Serilog.Sinks.AzureTableStorage
                     // If there is an operation currently in use, execute it
                     if (operation != null)
                     {
-                        await _table.ExecuteBatchAsync(operation).ConfigureAwait(false);
+                        await table.ExecuteBatchAsync(operation).ConfigureAwait(false);
                     }
 
                     // Create a new batch operation and zero count
@@ -130,7 +122,7 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             // Execute last batch
-            await _table.ExecuteBatchAsync(operation).ConfigureAwait(false);
+            await table.ExecuteBatchAsync(operation).ConfigureAwait(false);
         }
     }
 }
