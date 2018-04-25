@@ -19,6 +19,6 @@ namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
 {
     public interface ICloudTableProvider
     {
-        CloudTable GetCloudTable(CloudStorageAccount storageAccount);
+        CloudTable GetCloudTable(CloudStorageAccount storageAccount, string storageTableName, bool bypassTableCreationValidation);
     }
 }

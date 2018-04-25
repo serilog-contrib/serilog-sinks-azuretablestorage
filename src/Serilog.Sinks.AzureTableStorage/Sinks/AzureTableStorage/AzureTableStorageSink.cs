@@ -32,6 +32,8 @@ namespace Serilog.Sinks.AzureTableStorage
         readonly IFormatProvider _formatProvider;
         readonly IKeyGenerator _keyGenerator;
         readonly CloudStorageAccount _storageAccount;
+        readonly string _storageTableName;
+        readonly bool _bypassTableCreationValidation;
         readonly ICloudTableProvider _cloudTableProvider;
 
         /// <summary>
@@ -60,7 +62,9 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             _storageAccount = storageAccount;
-            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider(storageTableName, bypassTableCreationValidation);
+            _storageTableName = storageTableName;
+            _bypassTableCreationValidation = bypassTableCreationValidation;
+            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider();
         }
 
         /// <summary>
@@ -69,7 +73,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="logEvent">The log event to write.</param>
         public void Emit(LogEvent logEvent)
         {
-            var table = _cloudTableProvider.GetCloudTable(_storageAccount);
+            var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
             var logEventEntity = new LogEventEntity(
                 logEvent,
                 _formatProvider,
