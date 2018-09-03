@@ -128,7 +128,7 @@ namespace Serilog
         {
             if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
             if (string.IsNullOrEmpty(connectionString)) throw new ArgumentNullException(nameof(connectionString));
-
+            
             try
             {
                 var storageAccount = CloudStorageAccount.Parse(connectionString);
@@ -180,12 +180,7 @@ namespace Serilog
             if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
             if (string.IsNullOrWhiteSpace(accountName)) throw new ArgumentNullException(nameof(accountName));
             if (string.IsNullOrWhiteSpace(sharedAccessSignature)) throw new ArgumentNullException(nameof(sharedAccessSignature));
-
-            if(textFormatter == null)
-            {
-                textFormatter = new CompactJsonFormatter();
-            }
-
+            
             try
             {
                 var credentials = new StorageCredentials(sharedAccessSignature);
