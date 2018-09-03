@@ -16,7 +16,7 @@ using System;
 using System.IO;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
-using Serilog.Formatting.Json;
+using Serilog.Formatting;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -35,12 +35,14 @@ namespace Serilog.Sinks.AzureTableStorage
         /// Create a log event entity from a Serilog <see cref="LogEvent"/>.
         /// </summary>
         /// <param name="log">The event to log</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="formatProvider"></param>
+        /// <param name="textFormatter"></param>
         /// <param name="partitionKey">partition key to store</param>
         /// <param name="rowKey">row key to store</param>
         public LogEventEntity(
             LogEvent log,
             IFormatProvider formatProvider,
+            ITextFormatter textFormatter,
             string partitionKey,
             string rowKey)
         {
@@ -51,8 +53,10 @@ namespace Serilog.Sinks.AzureTableStorage
             Level = log.Level.ToString();
             Exception = log.Exception?.ToString();
             RenderedMessage = log.RenderMessage(formatProvider);
+
+            //Use the underlying TextFormatter to serialise the entire JSON object for the data column
             var s = new StringWriter();
-            new JsonFormatter(closingDelimiter: "", formatProvider: formatProvider).Format(log, s);
+            textFormatter.Format(log, s);
             Data = s.ToString();
         }
 
