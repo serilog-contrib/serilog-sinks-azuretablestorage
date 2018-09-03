@@ -19,6 +19,7 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
+using Serilog.Formatting.Compact;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
@@ -55,7 +56,7 @@ namespace Serilog.Sinks.AzureTableStorage
             ICloudTableProvider cloudTableProvider = null)
         {
             _formatProvider = formatProvider;
-            _textFormatter = textFormatter;
+            _textFormatter = textFormatter == null ? new CompactJsonFormatter() : textFormatter;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
 
             if (string.IsNullOrEmpty(storageTableName))
