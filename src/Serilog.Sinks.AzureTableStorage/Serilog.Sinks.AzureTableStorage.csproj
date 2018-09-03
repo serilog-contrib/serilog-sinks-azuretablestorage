@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <PackageReference Include="Serilog" Version="2.6.0" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="1.0.0" />
     <PackageReference Include="Serilog.Sinks.PeriodicBatching" Version="2.1.1" />
     <PackageReference Include="WindowsAzure.Storage" Version="9.1.0" />
   </ItemGroup>
