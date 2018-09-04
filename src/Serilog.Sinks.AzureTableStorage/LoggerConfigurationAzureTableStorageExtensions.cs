@@ -20,7 +20,6 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
-using Microsoft.WindowsAzure.Storage.Auth;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 
 namespace Serilog

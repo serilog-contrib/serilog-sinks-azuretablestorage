@@ -23,7 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -32,13 +31,14 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureBatchingTableStorageWithPropertiesSink : PeriodicBatchingSink
     {
-        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
         readonly string _additionalRowKeyPostfix;
         readonly string[] _propertyColumns;
         const int _maxAzureOperationsPerBatch = 100;
         readonly IKeyGenerator _keyGenerator;
         readonly CloudStorageAccount _storageAccount;
+        readonly string _storageTableName;
+        readonly bool _bypassTableCreationValidation;
         readonly ICloudTableProvider _cloudTableProvider;
 
         /// <summary>
@@ -73,7 +73,9 @@ namespace Serilog.Sinks.AzureTableStorage
             }
 
             _storageAccount = storageAccount;
-            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider(storageTableName, bypassTableCreationValidation);
+            _storageTableName = storageTableName;
+            _bypassTableCreationValidation = bypassTableCreationValidation;
+            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider();
 
             _formatProvider = formatProvider;
             _additionalRowKeyPostfix = additionalRowKeyPostfix;
@@ -83,7 +85,7 @@ namespace Serilog.Sinks.AzureTableStorage
 
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
-            var table = _cloudTableProvider.GetCloudTable(_storageAccount);
+            var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
             string lastPartitionKey = null;
             TableBatchOperation operation = null;
             var insertsPerOperation = 0;
