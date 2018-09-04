@@ -44,7 +44,7 @@ namespace Serilog.Sinks.AzureTableStorage
             string partitionKey,
             string rowKey)
         {
-            Timestamp = log.Timestamp.ToUniversalTime().DateTime;
+            Timestamp = log.Timestamp.ToUniversalTime();
             PartitionKey = partitionKey;
             RowKey = GetValidRowKey(rowKey);
             MessageTemplate = log.MessageTemplate.Text;
