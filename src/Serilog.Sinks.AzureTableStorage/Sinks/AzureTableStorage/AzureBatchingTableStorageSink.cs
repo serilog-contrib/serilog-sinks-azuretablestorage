@@ -22,9 +22,8 @@ using Serilog.Sinks.PeriodicBatching;
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Serilog.Formatting;
-using Serilog.Formatting.Compact;
+using Serilog.Formatting.Json;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -89,7 +88,7 @@ namespace Serilog.Sinks.AzureTableStorage
                 throw new ArgumentException("batchSizeLimit must be between 1 and 100 for Azure Table Storage");
 
             _formatProvider = formatProvider;
-            _textFormatter = textFormatter == null ? new CompactJsonFormatter() : textFormatter;
+            _textFormatter = textFormatter == null ? new JsonFormatter(formatProvider: _formatProvider) : textFormatter;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
 
             if (string.IsNullOrEmpty(storageTableName))

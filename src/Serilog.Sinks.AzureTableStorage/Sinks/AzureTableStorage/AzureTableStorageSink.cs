@@ -19,7 +19,7 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
-using Serilog.Formatting.Compact;
+using Serilog.Formatting.Json;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
@@ -41,6 +41,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// Construct a sink that saves logs to the specified storage account.
         /// </summary>
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="textFormatter"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="keyGenerator">generator used to generate partition keys and row keys</param>
@@ -56,7 +57,7 @@ namespace Serilog.Sinks.AzureTableStorage
             ICloudTableProvider cloudTableProvider = null)
         {
             _formatProvider = formatProvider;
-            _textFormatter = textFormatter == null ? new CompactJsonFormatter() : textFormatter;
+            _textFormatter = textFormatter == null ? new JsonFormatter(formatProvider: _formatProvider) : textFormatter;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
 
             if (string.IsNullOrEmpty(storageTableName))
