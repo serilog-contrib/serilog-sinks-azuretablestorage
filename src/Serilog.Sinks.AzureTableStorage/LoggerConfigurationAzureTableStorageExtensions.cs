@@ -58,7 +58,6 @@ namespace Serilog
         /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
-        [Obsolete("Use the newer overload specifying ITextFormatter instead")]
         public static LoggerConfiguration AzureTableStorage(
             this LoggerSinkConfiguration loggerConfiguration,
             CloudStorageAccount storageAccount,
@@ -106,7 +105,6 @@ namespace Serilog
         /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
-        [Obsolete("Use the newer overload specifying ITextFormatter instead")]
         public static LoggerConfiguration AzureTableStorage(
             this LoggerSinkConfiguration loggerConfiguration,
             string connectionString,
@@ -156,7 +154,6 @@ namespace Serilog
         /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
-        [Obsolete("Use the newer overload specifying ITextFormatter instead")]
         public static LoggerConfiguration AzureTableStorage(
             this LoggerSinkConfiguration loggerConfiguration,
             string sharedAccessSignature,
