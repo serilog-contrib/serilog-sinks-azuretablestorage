@@ -41,7 +41,6 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="rowKey">row key to store</param>
         public LogEventEntity(
             LogEvent log,
-            IFormatProvider formatProvider,
             ITextFormatter textFormatter,
             string partitionKey,
             string rowKey)
@@ -52,7 +51,7 @@ namespace Serilog.Sinks.AzureTableStorage
             MessageTemplate = log.MessageTemplate.Text;
             Level = log.Level.ToString();
             Exception = log.Exception?.ToString();
-            RenderedMessage = log.RenderMessage(formatProvider);
+            RenderedMessage = log.RenderMessage();
 
             //Use the underlying TextFormatter to serialise the entire JSON object for the data column
             var s = new StringWriter();

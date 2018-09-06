@@ -32,7 +32,6 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureBatchingTableStorageSink : PeriodicBatchingSink
     {
-        readonly IFormatProvider _formatProvider;
         readonly ITextFormatter _textFormatter;
         readonly IKeyGenerator _keyGenerator;
         readonly CloudStorageAccount _storageAccount;
@@ -57,7 +56,7 @@ namespace Serilog.Sinks.AzureTableStorage
             TimeSpan period,
             string storageTableName = null,
             ICloudTableProvider cloudTableProvider = null)
-            : this(storageAccount, formatProvider, textFormatter, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator(), cloudTableProvider: cloudTableProvider)
+            : this(storageAccount, textFormatter, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator(), cloudTableProvider: cloudTableProvider)
         {
         }
 
@@ -65,7 +64,6 @@ namespace Serilog.Sinks.AzureTableStorage
         /// Construct a sink that saves logs to the specified storage account.
         /// </summary>
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="textFormatter"></param>
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
@@ -75,7 +73,6 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         public AzureBatchingTableStorageSink(
             CloudStorageAccount storageAccount,
-            IFormatProvider formatProvider,
             ITextFormatter textFormatter,
             int batchSizeLimit,
             TimeSpan period,
@@ -88,8 +85,7 @@ namespace Serilog.Sinks.AzureTableStorage
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
                 throw new ArgumentException("batchSizeLimit must be between 1 and 100 for Azure Table Storage");
 
-            _formatProvider = formatProvider;
-            _textFormatter = textFormatter == null ? new JsonFormatter(formatProvider: _formatProvider) : textFormatter;
+            _textFormatter = textFormatter;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
 
             if (string.IsNullOrEmpty(storageTableName))
@@ -125,7 +121,6 @@ namespace Serilog.Sinks.AzureTableStorage
                 }
                 var logEventEntity = new LogEventEntity(
                     logEvent,
-                    _formatProvider,
                     _textFormatter,
                     partitionKey,
                     _keyGenerator.GenerateRowKey(logEvent)

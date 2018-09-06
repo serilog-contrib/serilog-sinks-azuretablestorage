@@ -22,6 +22,7 @@ using Serilog.Formatting;
 using Serilog.Sinks.AzureTableStorage;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
+using Serilog.Formatting.Json;
 
 namespace Serilog
 {
@@ -47,7 +48,7 @@ namespace Serilog
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null. (Note this is no longer used and a default ITextFormatter of JsonFormatter is used)</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
         /// key used for the events so is not enabled by default.</param>
@@ -74,9 +75,11 @@ namespace Serilog
             if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
             if (storageAccount == null) throw new ArgumentNullException(nameof(storageAccount));
 
+
+
             try
             {
-                return AzureTableStorage(loggerConfiguration, null, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
+                return AzureTableStorage(loggerConfiguration, null, storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
             }
             catch (Exception ex)
             {
@@ -94,7 +97,7 @@ namespace Serilog
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="connectionString">The Cloud Storage Account connection string to use to insert the log entries to.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null. (Note this is no longer used and a default ITextFormatter of JsonFormatter is used)</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
         /// key used for the events so is not enabled by default.</param>
@@ -120,11 +123,11 @@ namespace Serilog
         {
             if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
             if (string.IsNullOrEmpty(connectionString)) throw new ArgumentNullException(nameof(connectionString));
-            
+
             try
             {
                 var storageAccount = CloudStorageAccount.Parse(connectionString);
-                return AzureTableStorage(loggerConfiguration, null, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
+                return AzureTableStorage(loggerConfiguration, null, storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
             }
             catch (Exception ex)
             {
@@ -142,9 +145,9 @@ namespace Serilog
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="sharedAccessSignature">The storage account/table SAS key.</param>
         /// <param name="accountName">The storage account name.</param>
-        /// <param name="tableEndpoint">The (optional) table endpoint. Only needed for testing.</param>        /// 
+        /// <param name="tableEndpoint">The (optional) table endpoint. Only needed for testing.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null. (Note this is no longer used and a default ITextFormatter of JsonFormatter is used)</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
         /// key used for the events so is not enabled by default.</param>
@@ -186,7 +189,7 @@ namespace Serilog
                 }
 
                 // We set bypassTableCreationValidation to true explicitly here as the the SAS URL might not have enough permissions to query if the table exists.
-                return AzureTableStorage(loggerConfiguration, null, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, true, cloudTableProvider);
+                return AzureTableStorage(loggerConfiguration, null, storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, true, cloudTableProvider);
             }
             catch (Exception ex)
             {
@@ -205,7 +208,6 @@ namespace Serilog
         /// <param name="textFormatter">Use a Serilog ITextFormatter such as CompactJsonFormatter to store object in data column of Azure table</param>
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
         /// key used for the events so is not enabled by default.</param>
@@ -221,7 +223,6 @@ namespace Serilog
             ITextFormatter textFormatter,
             CloudStorageAccount storageAccount,            
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
-            IFormatProvider formatProvider = null,
             string storageTableName = null,
             bool writeInBatches = false,
             TimeSpan? period = null,
@@ -235,11 +236,14 @@ namespace Serilog
 
             ILogEventSink sink;
 
+            //If no textFormatter passed in then default to the old JsonFormatter
+            textFormatter = textFormatter ?? new JsonFormatter();
+
             try
             {
                 sink = writeInBatches ?
-                    (ILogEventSink)new AzureBatchingTableStorageSink(storageAccount, formatProvider, textFormatter, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, keyGenerator, bypassTableCreationValidation, cloudTableProvider) :
-                    new AzureTableStorageSink(storageAccount, formatProvider, textFormatter, storageTableName, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
+                    (ILogEventSink)new AzureBatchingTableStorageSink(storageAccount, textFormatter, batchPostingLimit ?? DefaultBatchPostingLimit, period ?? DefaultPeriod, storageTableName, keyGenerator, bypassTableCreationValidation, cloudTableProvider) :
+                    new AzureTableStorageSink(storageAccount, textFormatter, storageTableName, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
             }
             catch (Exception ex)
             {
@@ -258,7 +262,6 @@ namespace Serilog
         /// <param name="textFormatter">Use a Serilog ITextFormatter such as CompactJsonFormatter to store object in data column of Azure table</param>
         /// <param name="connectionString">The Cloud Storage Account connection string to use to insert the log entries to.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
         /// key used for the events so is not enabled by default.</param>
@@ -274,7 +277,6 @@ namespace Serilog
             ITextFormatter textFormatter,
             string connectionString,            
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
-            IFormatProvider formatProvider = null,            
             string storageTableName = null,
             bool writeInBatches = false,
             TimeSpan? period = null,
@@ -289,7 +291,7 @@ namespace Serilog
             try
             {
                 var storageAccount = CloudStorageAccount.Parse(connectionString);
-                return AzureTableStorage(loggerConfiguration, textFormatter, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
+                return AzureTableStorage(loggerConfiguration, textFormatter, storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
             }
             catch (Exception ex)
             {
@@ -310,7 +312,6 @@ namespace Serilog
         /// <param name="accountName">The storage account name.</param>
         /// <param name="tableEndpoint">The (optional) table endpoint. Only needed for testing.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
         /// key used for the events so is not enabled by default.</param>
@@ -327,7 +328,6 @@ namespace Serilog
             string accountName,            
             Uri tableEndpoint = null,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
-            IFormatProvider formatProvider = null,            
             string storageTableName = null,
             bool writeInBatches = false,
             TimeSpan? period = null,
@@ -353,7 +353,7 @@ namespace Serilog
                 }
 
                 // We set bypassTableCreationValidation to true explicitly here as the the SAS URL might not have enough permissions to query if the table exists.
-                return AzureTableStorage(loggerConfiguration, textFormatter, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, true, cloudTableProvider);
+                return AzureTableStorage(loggerConfiguration, textFormatter, storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, true, cloudTableProvider);
             }
             catch (Exception ex)
             {
