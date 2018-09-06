@@ -18,6 +18,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Formatting;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
@@ -30,6 +31,7 @@ namespace Serilog.Sinks.AzureTableStorage
     {
         readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly IFormatProvider _formatProvider;
+        readonly ITextFormatter _textFormatter;
         readonly IKeyGenerator _keyGenerator;
         readonly CloudStorageAccount _storageAccount;
         readonly string _storageTableName;
@@ -40,7 +42,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// Construct a sink that saves logs to the specified storage account.
         /// </summary>
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="textFormatter"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="keyGenerator">generator used to generate partition keys and row keys</param>
         /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
@@ -48,12 +50,14 @@ namespace Serilog.Sinks.AzureTableStorage
         public AzureTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
+            ITextFormatter textFormatter,
             string storageTableName = null,
             IKeyGenerator keyGenerator = null,
             bool bypassTableCreationValidation = false,
             ICloudTableProvider cloudTableProvider = null)
         {
             _formatProvider = formatProvider;
+            _textFormatter = textFormatter;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
 
             if (string.IsNullOrEmpty(storageTableName))
@@ -77,6 +81,7 @@ namespace Serilog.Sinks.AzureTableStorage
             var logEventEntity = new LogEventEntity(
                 logEvent,
                 _formatProvider,
+                _textFormatter,
                 _keyGenerator.GeneratePartitionKey(logEvent),
                 _keyGenerator.GenerateRowKey(logEvent)
                 );
