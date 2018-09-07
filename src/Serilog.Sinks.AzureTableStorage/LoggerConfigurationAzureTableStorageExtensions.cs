@@ -48,7 +48,7 @@ namespace Serilog
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null. (Note this is no longer used and a default ITextFormatter of JsonFormatter is used)</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
         /// key used for the events so is not enabled by default.</param>
@@ -76,10 +76,9 @@ namespace Serilog
             if (storageAccount == null) throw new ArgumentNullException(nameof(storageAccount));
 
 
-
             try
             {
-                return AzureTableStorage(loggerConfiguration, null, storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
+                return AzureTableStorage(loggerConfiguration, new JsonFormatter(formatProvider: formatProvider), storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
             }
             catch (Exception ex)
             {
@@ -97,7 +96,7 @@ namespace Serilog
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="connectionString">The Cloud Storage Account connection string to use to insert the log entries to.</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null. (Note this is no longer used and a default ITextFormatter of JsonFormatter is used)</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
         /// key used for the events so is not enabled by default.</param>
@@ -127,7 +126,7 @@ namespace Serilog
             try
             {
                 var storageAccount = CloudStorageAccount.Parse(connectionString);
-                return AzureTableStorage(loggerConfiguration, null, storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
+                return AzureTableStorage(loggerConfiguration, new JsonFormatter(formatProvider: formatProvider), storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
             }
             catch (Exception ex)
             {
@@ -189,7 +188,7 @@ namespace Serilog
                 }
 
                 // We set bypassTableCreationValidation to true explicitly here as the the SAS URL might not have enough permissions to query if the table exists.
-                return AzureTableStorage(loggerConfiguration, null, storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, true, cloudTableProvider);
+                return AzureTableStorage(loggerConfiguration, new JsonFormatter(formatProvider: formatProvider), storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, true, cloudTableProvider);
             }
             catch (Exception ex)
             {
