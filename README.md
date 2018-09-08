@@ -49,5 +49,5 @@ In your application's `App.config` or `Web.config` file, specify the file sink a
   <appSettings>
     <add key="serilog:using:AzureTableStorage" value="Serilog.Sinks.AzureTableStorage" />
     <add key="serilog:write-to:AzureTableStorage.connectionString" value="DefaultEndpointsProtocol=https;AccountName=ACCOUNT_NAME;AccountKey=KEY;EndpointSuffix=core.windows.net" />
-    <add key="serilog:write-to:AzureTableStorage.textFormatter" value="Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact" />
+    <add key="serilog:write-to:AzureTableStorage.formatter" value="Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact" />
 ```
