@@ -14,10 +14,9 @@
 
 using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
-using Serilog.Formatting.Json;
+using Serilog.Formatting;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -36,29 +35,32 @@ namespace Serilog.Sinks.AzureTableStorage
         /// Create a log event entity from a Serilog <see cref="LogEvent"/>.
         /// </summary>
         /// <param name="log">The event to log</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="formatProvider"></param>
+        /// <param name="textFormatter"></param>
         /// <param name="partitionKey">partition key to store</param>
         /// <param name="rowKey">row key to store</param>
         public LogEventEntity(
             LogEvent log,
-            IFormatProvider formatProvider,
+            ITextFormatter textFormatter,
             string partitionKey,
             string rowKey)
         {
-            Timestamp = log.Timestamp.ToUniversalTime().DateTime;
+            Timestamp = log.Timestamp.ToUniversalTime();
             PartitionKey = partitionKey;
             RowKey = GetValidRowKey(rowKey);
             MessageTemplate = log.MessageTemplate.Text;
             Level = log.Level.ToString();
             Exception = log.Exception?.ToString();
-            RenderedMessage = log.RenderMessage(formatProvider);
+            RenderedMessage = log.RenderMessage();
+
+            //Use the underlying TextFormatter to serialise the entire JSON object for the data column
             var s = new StringWriter();
-            new JsonFormatter(closingDelimiter: "", formatProvider: formatProvider).Format(log, s);
+            textFormatter.Format(log, s);
             Data = s.ToString();
         }
 
         // http://msdn.microsoft.com/en-us/library/windowsazure/dd179338.aspx
-        static string GetValidRowKey(string rowKey)
+        public static string GetValidRowKey(string rowKey)
         {
             rowKey = ObjectNaming.KeyFieldValueCharactersNotAllowedMatch.Replace(rowKey, "");
             return rowKey.Length > 1024 ? rowKey.Substring(0, 1024) : rowKey;
