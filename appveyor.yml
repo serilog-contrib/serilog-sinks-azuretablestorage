@@ -9,7 +9,7 @@ artifacts:
 - path: artifacts/Serilog.*.nupkg
 only_commits:
   files:
-    - serilog.sinks.azuretablestorage.sln
+    - serilog-sinks-azuretablestorage.sln
     - src/Serilog.Sinks.AzureTableStorage/
     - Build.ps1
     - assets/
