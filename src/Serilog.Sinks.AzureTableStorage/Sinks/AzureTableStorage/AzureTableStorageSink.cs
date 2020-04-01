@@ -14,8 +14,7 @@
 
 using System;
 using System.Threading;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.Azure.Cosmos.Table;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;

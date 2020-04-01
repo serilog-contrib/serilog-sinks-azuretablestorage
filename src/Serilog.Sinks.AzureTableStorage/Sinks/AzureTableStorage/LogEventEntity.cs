@@ -14,7 +14,7 @@
 
 using System;
 using System.IO;
-using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.Azure.Cosmos.Table;
 using Serilog.Events;
 using Serilog.Formatting;
 

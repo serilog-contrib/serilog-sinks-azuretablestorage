@@ -1,11 +1,11 @@
-﻿using Microsoft.WindowsAzure.Storage.Table;
-using Xunit;
+﻿using Xunit;
 using Serilog.Events;
 using Serilog.Parsing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
+using Microsoft.Azure.Cosmos.Table;
 
 namespace Serilog.Sinks.AzureTableStorage.Tests
 {

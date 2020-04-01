@@ -13,14 +13,13 @@
 // limitations under the License.
 
 using System;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Auth;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
+using Microsoft.Azure.Cosmos.Table;
 
 namespace Serilog
 {
@@ -135,7 +134,7 @@ namespace Serilog
 
             try
             {
-                var storageAccount = CloudStorageAccount.Parse(connectionString);
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(connectionString);
                 return AzureTableStorageWithProperties(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, additionalRowKeyPostfix, keyGenerator, propertyColumns, bypassTableCreationValidation, cloudTableProvider);
             }
             catch (Exception ex)
@@ -191,7 +190,7 @@ namespace Serilog
 
             try
             {
-                var credentials = new StorageCredentials(sharedAccessSignature);
+                StorageCredentials credentials = new StorageCredentials(sharedAccessSignature);
                 CloudStorageAccount storageAccount = null;
                 if (tableEndpoint == null)
                 {
@@ -199,7 +198,7 @@ namespace Serilog
                 }
                 else
                 {
-                    storageAccount = new CloudStorageAccount(credentials, null, null, tableEndpoint, null);
+                    storageAccount = new CloudStorageAccount(credentials, tableEndpoint);
                 }
 
                 // We set bypassTableCreationValidation to true explicitly here as the the SAS URL might not have enough permissions to query if the table exists.

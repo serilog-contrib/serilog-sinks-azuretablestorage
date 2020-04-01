@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.Azure.Cosmos.Table;
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
@@ -21,7 +20,6 @@ using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
 using Serilog.Sinks.PeriodicBatching;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Serilog.Sinks.AzureTableStorage
