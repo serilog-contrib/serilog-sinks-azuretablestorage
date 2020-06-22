@@ -25,3 +25,29 @@ It is possible to configure the sink using [Serilog.Settings.Configuration](http
 ```
 
 JSON configuration must be enabled using `ReadFrom.Configuration()`; see the [documentation of the JSON configuration package](https://github.com/serilog/serilog-settings-configuration) for details.
+
+### XML `<appSettings>` configuration
+
+To use the file sink with the [Serilog.Settings.AppSettings](https://github.com/serilog/serilog-settings-appsettings) package, first install that package if you haven't already done so:
+
+```powershell
+Install-Package Serilog.Settings.AppSettings
+```
+
+Instead of configuring the logger in code, call `ReadFrom.AppSettings()`:
+
+```csharp
+var log = new LoggerConfiguration()
+    .ReadFrom.AppSettings()
+    .CreateLogger();
+```
+
+In your application's `App.config` or `Web.config` file, specify the file sink assembly and required path format under the `<appSettings>` node:
+
+```xml
+<configuration>
+  <appSettings>
+    <add key="serilog:using:AzureTableStorage" value="Serilog.Sinks.AzureTableStorage" />
+    <add key="serilog:write-to:AzureTableStorage.connectionString" value="DefaultEndpointsProtocol=https;AccountName=ACCOUNT_NAME;AccountKey=KEY;EndpointSuffix=core.windows.net" />
+    <add key="serilog:write-to:AzureTableStorage.formatter" value="Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact" />
+```

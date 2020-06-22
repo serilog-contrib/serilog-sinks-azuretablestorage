@@ -29,7 +29,7 @@ namespace Serilog.Sinks.AzureTableStorage
     {
         // Azure tables support a maximum of 255 properties. PartitionKey, RowKey and Timestamp
         // bring the maximum to 252.
-        const int _maxNumberOfPropertiesPerRow = 252;
+        private const int _maxNumberOfPropertiesPerRow = 252;
 
         /// <summary>
         /// Creates a DynamicTableEntity for Azure Storage, given a Serilog <see cref="LogEvent"/>.Properties
@@ -99,10 +99,8 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <returns>true if the property name conforms to C# identifier naming rules and can therefore be added as a table property</returns>
         private static bool IsValidColumnName(string propertyName)
         {
-            string regex = @"^(?:((?!\d)\w+(?:\.(?!\d)\w+)*)\.)?((?!\d)\w+)$";
-            bool isValid = Regex.Match(propertyName, regex).Success;
-
-            return isValid;
+            const string regex = @"^(?:((?!\d)\w+(?:\.(?!\d)\w+)*)\.)?((?!\d)\w+)$";
+            return Regex.Match(propertyName, regex).Success;
         }
 
         /// <summary>

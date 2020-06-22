@@ -9,7 +9,7 @@ namespace Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator
     public class PropertiesKeyGenerator : DefaultKeyGenerator
     {
         // Valid RowKey name characters
-        static readonly Regex _rowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|[\x00-\x1f]|[\x7f-\x9f])");
+        private static readonly Regex _rowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|[\x00-\x1f]|[\x7f-\x9f])");
 
         /// <summary>
         /// Generate a valid string for a table property key by removing invalid characters
@@ -29,9 +29,9 @@ namespace Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator
         /// Automatically generates the RowKey using the following template: {Level|MessageTemplate|IncrementedRowId}
         /// </summary>
         /// <param name="logEvent">the log event</param>
-        /// <param name="additionalRowKeyPostfix">suffix for the RowKey</param>
+        /// <param name="suffix">suffix for the RowKey</param>
         /// <returns>The generated RowKey</returns>
-        public override string GenerateRowKey(LogEvent logEvent, string additionalRowKeyPostfix = null)
+        public override string GenerateRowKey(LogEvent logEvent, string suffix = null)
         {
             var prefixBuilder = new StringBuilder(512);
 
@@ -40,8 +40,8 @@ namespace Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator
 
             var postfixBuilder = new StringBuilder(512);
 
-            if (additionalRowKeyPostfix != null)
-                postfixBuilder.Append('|').Append(GetValidStringForTableKey(additionalRowKeyPostfix));
+            if (suffix != null)
+                postfixBuilder.Append('|').Append(GetValidStringForTableKey(suffix));
 
             // Append GUID to postfix
             postfixBuilder.Append('|').Append(Guid.NewGuid());

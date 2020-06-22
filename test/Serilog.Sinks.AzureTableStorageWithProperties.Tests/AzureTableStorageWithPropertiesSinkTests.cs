@@ -1,12 +1,12 @@
-﻿using Microsoft.WindowsAzure.Storage;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
-using Xunit;
 using Serilog.Events;
 using Serilog.Parsing;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Xunit;
 
 namespace Serilog.Sinks.AzureTableStorage.Tests
 {
@@ -453,6 +453,81 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             Log.Information("This should silently work, even though the connection string is malformed");
 
             Assert.True(true);
+        }
+
+        private const string PolicyName = "MyPolicy";
+
+        private async Task SetupTableStoredAccessPolicyAsync(CloudTable table)
+        {
+            var permissions = await table.GetPermissionsAsync();
+            var policy = new SharedAccessTablePolicy();
+
+            if (permissions.SharedAccessPolicies.Count > 0 && permissions.SharedAccessPolicies.ContainsKey(PolicyName))
+            {
+                // extend the existing one by 1h
+                policy = permissions.SharedAccessPolicies[PolicyName];
+                policy.SharedAccessExpiryTime = DateTime.UtcNow.AddHours(48);
+            }
+            else
+            {
+                // create a new one
+                policy = new SharedAccessTablePolicy()
+                {
+                    SharedAccessExpiryTime = DateTime.UtcNow.AddHours(48),
+                    Permissions = SharedAccessTablePermissions.Add
+                };
+                permissions.SharedAccessPolicies.Add(PolicyName, policy);
+            }
+
+            await table.SetPermissionsAsync(permissions);
+        }
+
+        private async Task<string> GetSASUrlForTableAsync(CloudTable table)
+        {
+            await SetupTableStoredAccessPolicyAsync(table);
+
+            var permissions = await table.GetPermissionsAsync().ConfigureAwait(false);
+            var policy = permissions.SharedAccessPolicies[PolicyName];
+
+            var sasUrl = table.GetSharedAccessSignature(null, PolicyName);
+
+            return sasUrl;
+        }
+
+        [Fact]
+        public async Task WhenALoggerUsesASASSinkItIsRetrievableFromTheTableWithProperties()
+        {
+            var storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
+            var tableClient = storageAccount.CreateCloudTableClient();
+            var table = tableClient.GetTableReference("LogEventEntity");
+
+            await table.DeleteIfExistsAsync();
+            await table.CreateIfNotExistsAsync();
+
+            var sasUrl = await GetSASUrlForTableAsync(table);
+
+            var logger = new LoggerConfiguration()
+                .WriteTo.AzureTableStorageWithProperties(sasUrl, "test", storageAccount.TableEndpoint)
+                .CreateLogger();
+
+            var exception = new ArgumentException("Some exception");
+
+            const string messageTemplate = "{Properties} should go in their {Numbered} {Space}";
+
+            logger.Information(exception, messageTemplate, "Properties", 1234, ' ');
+
+            var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
+
+            // Check the presence of same properties as in previous version
+            Assert.Equal(messageTemplate, result.Properties["MessageTemplate"].StringValue);
+            Assert.Equal("Information", result.Properties["Level"].StringValue);
+            Assert.Equal("System.ArgumentException: Some exception", result.Properties["Exception"].StringValue);
+            Assert.Equal("\"Properties\" should go in their 1234  ", result.Properties["RenderedMessage"].StringValue);
+
+            // Check the presence of the new properties.
+            Assert.Equal("Properties", result.Properties["Properties"].PropertyAsObject);
+            Assert.Equal(1234, result.Properties["Numbered"].PropertyAsObject);
+            Assert.Equal(" ", result.Properties["Space"].PropertyAsObject);
         }
     }
 }

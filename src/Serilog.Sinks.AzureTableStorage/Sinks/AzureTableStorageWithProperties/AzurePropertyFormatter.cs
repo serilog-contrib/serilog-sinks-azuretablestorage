@@ -13,13 +13,8 @@
 // limitations under the License.
 
 using Microsoft.WindowsAzure.Storage.Table;
-using Serilog.Debugging;
 using Serilog.Events;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -39,23 +34,22 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <returns>An Azure Storage entity EntityProperty</returns>
         public static EntityProperty ToEntityProperty(LogEventPropertyValue value, string format = null, IFormatProvider formatProvider = null)
         {
-            var scalar = value as ScalarValue;
-            if (scalar != null)
+            if (value is ScalarValue scalar)
+            {
                 return SimplifyScalar(scalar.Value);
+            }
 
-            var dict = value as DictionaryValue;
-            if (dict != null)
+            if (value is DictionaryValue dict)
             {
                 return new EntityProperty(dict.ToString(format, formatProvider));
             }
 
-            var seq = value as SequenceValue;
-            if (seq != null)
+            if (value is SequenceValue seq)
             {
                 return new EntityProperty(seq.ToString(format, formatProvider));
             }
-            var str = value as StructureValue;
-            if (str != null)
+
+            if (value is StructureValue str)
             {
                 return new EntityProperty(str.ToString(format, formatProvider));
             }
@@ -81,6 +75,5 @@ namespace Serilog.Sinks.AzureTableStorage
 
             return new EntityProperty(value.ToString());
         }
-
     }
 }

@@ -19,6 +19,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// which has been 'cleaned' of any disallowed characters and trimmed
         /// to the allowed length.
         /// </summary>
+        /// <param name="keyValue"></param>
         public static string GetValidKeyValue(string keyValue)
         {
             keyValue = KeyFieldValueCharactersNotAllowedMatch.Replace(keyValue, "");

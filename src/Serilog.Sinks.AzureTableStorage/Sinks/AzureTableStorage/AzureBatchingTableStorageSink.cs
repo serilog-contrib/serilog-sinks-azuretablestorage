@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
-
-using Serilog.Sinks.PeriodicBatching;
-using System.Threading.Tasks;
+using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
+using Serilog.Sinks.PeriodicBatching;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using Serilog.Formatting;
+using Serilog.Formatting.Json;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -30,10 +32,12 @@ namespace Serilog.Sinks.AzureTableStorage
     /// </summary>
     public class AzureBatchingTableStorageSink : PeriodicBatchingSink
     {
-        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        readonly IFormatProvider _formatProvider;
-        private readonly IKeyGenerator _keyGenerator;
-        readonly CloudTable _table;
+        readonly ITextFormatter _textFormatter;
+        readonly IKeyGenerator _keyGenerator;
+        readonly CloudStorageAccount _storageAccount;
+        readonly string _storageTableName;
+        readonly bool _bypassTableCreationValidation;
+        readonly ICloudTableProvider _cloudTableProvider;
 
         /// <summary>
         /// Construct a sink that saves logs to the specified storage account.
@@ -43,14 +47,16 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
+        /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         public AzureBatchingTableStorageSink(
             CloudStorageAccount storageAccount,
             IFormatProvider formatProvider,
+            ITextFormatter textFormatter,
             int batchSizeLimit,
             TimeSpan period,
-            string storageTableName = null)
-            : this(storageAccount, formatProvider, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator())
-            
+            string storageTableName = null,
+            ICloudTableProvider cloudTableProvider = null)
+            : this(storageAccount, textFormatter, batchSizeLimit, period, storageTableName, new DefaultKeyGenerator(), cloudTableProvider: cloudTableProvider)
         {
         }
 
@@ -58,35 +64,44 @@ namespace Serilog.Sinks.AzureTableStorage
         /// Construct a sink that saves logs to the specified storage account.
         /// </summary>
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="textFormatter"></param>
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="keyGenerator">generator used for partition keys and row keys</param>
+        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
+        /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         public AzureBatchingTableStorageSink(
             CloudStorageAccount storageAccount,
-            IFormatProvider formatProvider,
+            ITextFormatter textFormatter,
             int batchSizeLimit,
             TimeSpan period,
             string storageTableName = null,
-            IKeyGenerator keyGenerator = null)
+            IKeyGenerator keyGenerator = null,
+            bool bypassTableCreationValidation = false,
+            ICloudTableProvider cloudTableProvider = null)
             : base(batchSizeLimit, period)
         {
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
                 throw new ArgumentException("batchSizeLimit must be between 1 and 100 for Azure Table Storage");
 
-            _formatProvider = formatProvider;
+            _textFormatter = textFormatter;
             _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
-            var tableClient = storageAccount.CreateCloudTableClient();
 
-            if (string.IsNullOrEmpty(storageTableName)) storageTableName = typeof(LogEventEntity).Name;
+            if (string.IsNullOrEmpty(storageTableName))
+            {
+                storageTableName = typeof(LogEventEntity).Name;
+            }
 
-            _table = tableClient.GetTableReference(storageTableName);
-            _table.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+            _storageAccount = storageAccount;
+            _storageTableName = storageTableName;
+            _bypassTableCreationValidation = bypassTableCreationValidation;
+            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider();
         }
 
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
+            var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
             TableBatchOperation operation = new TableBatchOperation();
 
             string lastPartitionKey = null;
@@ -100,13 +115,13 @@ namespace Serilog.Sinks.AzureTableStorage
                     lastPartitionKey = partitionKey;
                     if (operation.Count > 0)
                     {
-                        await _table.ExecuteBatchAsync(operation);
+                        await table.ExecuteBatchAsync(operation).ConfigureAwait(false);
                         operation = new TableBatchOperation();
                     }
                 }
                 var logEventEntity = new LogEventEntity(
                     logEvent,
-                    _formatProvider,
+                    _textFormatter,
                     partitionKey,
                     _keyGenerator.GenerateRowKey(logEvent)
                     );
@@ -114,7 +129,7 @@ namespace Serilog.Sinks.AzureTableStorage
             }
             if (operation.Count > 0)
             {
-                await _table.ExecuteBatchAsync(operation);
+                await table.ExecuteBatchAsync(operation).ConfigureAwait(false);
             }
         }
     }

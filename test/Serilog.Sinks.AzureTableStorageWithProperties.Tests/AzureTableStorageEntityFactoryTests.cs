@@ -86,7 +86,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             Assert.Equal(expectedRowKeyWithoutGuid, rowKeyWithoutGuid);
             Guid.Parse(rowKeyGuid);
             Assert.Equal(Guid.Parse(rowKeyGuid).ToString(), rowKeyGuid);
-            Assert.False(entity.RowKey.Contains('Z'));
+            Assert.DoesNotContain("Z", entity.RowKey);
         }
 
         [Fact]
@@ -228,7 +228,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
                 properties.Add(new LogEventProperty(propName, new ScalarValue(i)));
 
                 messageTemplate += $"{{{propName}}}";
-            };
+            }
 
             var template = new MessageTemplateParser().Parse(messageTemplate);
 
