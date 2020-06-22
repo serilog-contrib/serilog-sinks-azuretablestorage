@@ -125,7 +125,7 @@ namespace Serilog.Sinks.AzureTableStorage
                     partitionKey,
                     _keyGenerator.GenerateRowKey(logEvent)
                     );
-                operation.Add(TableOperation.Insert(logEventEntity));
+                operation.Add(TableOperation.InsertOrMerge(logEventEntity));
             }
             if (operation.Count > 0)
             {

@@ -82,7 +82,7 @@ namespace Serilog.Sinks.AzureTableStorage
                 _keyGenerator.GenerateRowKey(logEvent)
                 );
 
-            table.ExecuteAsync(TableOperation.Insert(logEventEntity))
+            table.ExecuteAsync(TableOperation.InsertOrMerge(logEventEntity))
                 .SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
     }
