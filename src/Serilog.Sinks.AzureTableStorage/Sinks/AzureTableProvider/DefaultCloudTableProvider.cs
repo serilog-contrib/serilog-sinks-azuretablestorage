@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Microsoft.Azure.Cosmos.Table;
 using System;
 using System.Threading;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
+
 
 namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
 {
@@ -28,7 +28,7 @@ namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
         {
             if (_cloudTable == null)
             {
-                var cloudTableClient = storageAccount.CreateCloudTableClient();
+                CloudTableClient cloudTableClient = storageAccount.CreateCloudTableClient();
                 _cloudTable = cloudTableClient.GetTableReference(storageTableName);
 
                 // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
