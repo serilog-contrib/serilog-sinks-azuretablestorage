@@ -279,7 +279,11 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             logger.Information("{@Struct0}", struct0);
             var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
+#if NET472
             Assert.Equal("Struct0 { Struct1Val: Struct1 { IntVal: 10, StringVal: \"ABCDE\" }, Struct2Val: Struct2 { DateTimeVal: 12/03/2014 17:37:12, DoubleVal: 3.14159265358979 } }", result.Properties["Struct0"].StringValue);
+#else
+            Assert.Equal("Struct0 { Struct1Val: Struct1 { IntVal: 10, StringVal: \"ABCDE\" }, Struct2Val: Struct2 { DateTimeVal: 12/03/2014 17:37:12, DoubleVal: 3.141592653589793 } }", result.Properties["Struct0"].StringValue);
+#endif
         }
 
         [Fact]

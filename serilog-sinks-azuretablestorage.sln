@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Artifacts", "Artifacts", "{
 		Build.ps1 = Build.ps1
 		CHANGES.md = CHANGES.md
 		Directory.Build.props = Directory.Build.props
+		global.json = global.json
 		README.md = README.md
 	EndProjectSection
 EndProject
