@@ -81,7 +81,7 @@ namespace Serilog.Sinks.AzureTableStorage
         public void Emit(LogEvent logEvent)
         {
             var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
-            var op = TableOperation.Insert(AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator, _propertyColumns));
+            var op = TableOperation.InsertOrMerge(AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator, _propertyColumns));
 
             table.ExecuteAsync(op).SyncContextSafeWait(_waitTimeoutMilliseconds);
         }

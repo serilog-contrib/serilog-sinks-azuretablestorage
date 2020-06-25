@@ -52,7 +52,6 @@ namespace Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator
             {
                 prefixBuilder.Length = maxPrefixLength;
             }
-
             return prefixBuilder.Append(postfixBuilder).ToString();
         }
     }
