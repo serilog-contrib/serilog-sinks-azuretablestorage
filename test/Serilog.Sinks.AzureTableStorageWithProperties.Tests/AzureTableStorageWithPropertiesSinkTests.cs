@@ -477,7 +477,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
                 policy = new SharedAccessTablePolicy()
                 {
                     SharedAccessExpiryTime = DateTime.UtcNow.AddHours(48),
-                    Permissions = SharedAccessTablePermissions.Add
+                    Permissions = SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update
                 };
                 permissions.SharedAccessPolicies.Add(PolicyName, policy);
             }

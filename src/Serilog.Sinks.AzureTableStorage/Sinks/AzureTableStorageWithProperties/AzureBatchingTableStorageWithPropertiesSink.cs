@@ -116,7 +116,7 @@ namespace Serilog.Sinks.AzureTableStorage
                 }
 
                 // Add current entry to the batch
-                operation.Add(TableOperation.Insert(tableEntity));
+                operation.Add(TableOperation.InsertOrMerge(tableEntity));
 
                 insertsPerOperation++;
             }
