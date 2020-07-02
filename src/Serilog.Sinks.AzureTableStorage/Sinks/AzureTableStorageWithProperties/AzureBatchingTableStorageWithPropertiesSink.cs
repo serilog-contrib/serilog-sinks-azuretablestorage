@@ -35,6 +35,7 @@ namespace Serilog.Sinks.AzureTableStorage
         const int _maxAzureOperationsPerBatch = 100;
         readonly IKeyGenerator _keyGenerator;
         readonly CloudStorageAccount _storageAccount;
+        readonly CloudTable _table;
         readonly string _storageTableName;
         readonly bool _bypassTableCreationValidation;
         readonly ICloudTableProvider _cloudTableProvider;
@@ -81,9 +82,41 @@ namespace Serilog.Sinks.AzureTableStorage
             _keyGenerator = keyGenerator ?? new PropertiesKeyGenerator();
         }
 
+        /// <summary>
+        /// Construct a sink that saves logs to the specified storage account.
+        /// </summary>
+        /// <param name="cloudTable">The Cloud Table to use to insert the log entries to.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="batchSizeLimit"></param>
+        /// <param name="period"></param>
+        /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
+        /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
+        /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
+        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
+        /// <returns>Logger configuration, allowing configuration to continue.</returns>
+        public AzureBatchingTableStorageWithPropertiesSink(CloudTable table,
+            IFormatProvider formatProvider,
+            int batchSizeLimit,
+            TimeSpan period,
+            string additionalRowKeyPostfix = null,
+            IKeyGenerator keyGenerator = null,
+            string[] propertyColumns = null,
+            bool bypassTableCreationValidation = false)
+            : base(batchSizeLimit, period)
+        {
+            _table = table;
+            _storageTableName = table.Name;
+            _bypassTableCreationValidation = bypassTableCreationValidation;
+
+            _formatProvider = formatProvider;
+            _additionalRowKeyPostfix = additionalRowKeyPostfix;
+            _propertyColumns = propertyColumns;
+            _keyGenerator = keyGenerator ?? new PropertiesKeyGenerator();
+        }
+
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
-            var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
+            var table = _table ?? _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
             string lastPartitionKey = null;
             TableBatchOperation operation = null;
             var insertsPerOperation = 0;

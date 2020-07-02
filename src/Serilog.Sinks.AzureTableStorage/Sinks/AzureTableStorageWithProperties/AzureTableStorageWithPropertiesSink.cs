@@ -34,6 +34,7 @@ namespace Serilog.Sinks.AzureTableStorage
         readonly string[] _propertyColumns;
         readonly IKeyGenerator _keyGenerator;
         readonly CloudStorageAccount _storageAccount;
+        readonly CloudTable _table;
         readonly string _storageTableName;
         readonly bool _bypassTableCreationValidation;
         readonly ICloudTableProvider _cloudTableProvider;
@@ -75,12 +76,39 @@ namespace Serilog.Sinks.AzureTableStorage
         }
 
         /// <summary>
+        /// Construct a sink that saves logs to the specified table.
+        /// </summary>
+        /// <param name="table">The Cloud Storage Table to use to insert the log entries to.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
+        /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
+        /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
+        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
+        public AzureTableStorageWithPropertiesSink(CloudTable table,
+            IFormatProvider formatProvider,
+            string additionalRowKeyPostfix = null,
+            IKeyGenerator keyGenerator = null,
+            string[] propertyColumns = null,
+            bool bypassTableCreationValidation = false)
+        {
+            _table = table;
+            _storageTableName = table.Name;
+
+            _bypassTableCreationValidation = bypassTableCreationValidation;
+
+            _formatProvider = formatProvider;
+            _additionalRowKeyPostfix = additionalRowKeyPostfix;
+            _propertyColumns = propertyColumns;
+            _keyGenerator = keyGenerator ?? new PropertiesKeyGenerator();
+        }
+
+        /// <summary>
         /// Emit the provided log event to the sink.
         /// </summary>
         /// <param name="logEvent">The log event to write.</param>
         public void Emit(LogEvent logEvent)
         {
-            var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
+            var table = _table ?? _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
             var op = TableOperation.InsertOrMerge(AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator, _propertyColumns));
 
             table.ExecuteAsync(op).SyncContextSafeWait(_waitTimeoutMilliseconds);
