@@ -9,8 +9,8 @@ using Xunit;
 
 namespace Serilog.Sinks.AzureTableStorage.Tests
 {
-    [Collection("AzureStorageIntegrationTests")]
-    public class AzureTableStorageWithPropertiesSinkTests
+    [Collection("AzureStorageIntegrationCloudStorageAccountTests")]
+    public class AzureTableStorageWithPropertiesSinkCloudStorageAccountTests
     {
         static async Task<IList<DynamicTableEntity>> TableQueryTakeDynamicAsync(CloudTable table, int takeCount)
         {
@@ -315,6 +315,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var table = tableClient.GetTableReference("LogEventEntity");
 
             await table.DeleteIfExistsAsync();
+            await table.CreateIfNotExistsAsync();
 
             var logger = new LoggerConfiguration()
                 .WriteTo.AzureTableStorageWithProperties(storageAccount)
@@ -393,6 +394,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var table = tableClient.GetTableReference("LogEventEntity");
 
             await table.DeleteIfExistsAsync();
+            await table.CreateIfNotExistsAsync();
 
             using (var sink = new AzureBatchingTableStorageWithPropertiesSink(storageAccount, null, 1000, TimeSpan.FromMinutes(1)))
             {
