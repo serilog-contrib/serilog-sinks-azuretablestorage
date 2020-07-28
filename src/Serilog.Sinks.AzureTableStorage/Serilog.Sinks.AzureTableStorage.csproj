@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <Description>Serilog event sink that writes to Azure Table Storage over HTTP.</Description>
-    <VersionPrefix>5.0.0</VersionPrefix>
-    <!--<VersionSuffix>beta</VersionSuffix>-->
+    <VersionPrefix>5.0.1</VersionPrefix>
     <Authors>Robert Moore</Authors>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Serilog.Sinks.AzureTableStorage</AssemblyName>
