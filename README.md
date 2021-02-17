@@ -51,3 +51,7 @@ In your application's `App.config` or `Web.config` file, specify the file sink a
     <add key="serilog:write-to:AzureTableStorage.connectionString" value="DefaultEndpointsProtocol=https;AccountName=ACCOUNT_NAME;AccountKey=KEY;EndpointSuffix=core.windows.net" />
     <add key="serilog:write-to:AzureTableStorage.formatter" value="Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact" />
 ```
+
+### Async approach
+It is possible to configure the collector using [Serilog.Sinks.Async](https://github.com/serilog/serilog-sinks-async) to have an async approach.
+
