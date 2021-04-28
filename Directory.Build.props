@@ -7,9 +7,9 @@
   </PropertyGroup>
   <ItemGroup>
       <PackageReference Include="SonarAnalyzer.CSharp" Version="8.21.0.30542">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-      </PackageReference>
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="xunit.analyzers" Version="0.10.0" PrivateAssets="All" />
   </ItemGroup>
 

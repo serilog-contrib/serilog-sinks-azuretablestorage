@@ -134,7 +134,7 @@ namespace Serilog
 
             try
             {
-                var storageAccount = CloudStorageAccount.Parse(connectionString);
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(connectionString);
                 return AzureTableStorageWithProperties(loggerConfiguration, storageAccount, restrictedToMinimumLevel, formatProvider, storageTableName, writeInBatches, period, batchPostingLimit, additionalRowKeyPostfix, keyGenerator, propertyColumns, bypassTableCreationValidation, cloudTableProvider);
             }
             catch (Exception ex)
@@ -190,7 +190,7 @@ namespace Serilog
 
             try
             {
-                var credentials = new StorageCredentials(sharedAccessSignature);
+                StorageCredentials credentials = new StorageCredentials(sharedAccessSignature);
                 CloudStorageAccount storageAccount = null;
                 if (tableEndpoint == null)
                 {
