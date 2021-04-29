@@ -2,7 +2,7 @@
 
 Writes to a table in [Windows Azure Table Storage](https://azure.microsoft.com/en-us/documentation/articles/storage-dotnet-how-to-use-tables/).
 
-**Package** - [Serilog.Sinks.AzureTableStorage](http://nuget.org/packages/serilog.sinks.azuretablestorage) | **Platforms** - .NET 4.5
+**Package** - [Serilog.Sinks.AzureTableStorage](http://nuget.org/packages/serilog.sinks.azuretablestorage) | **Platforms** - .NET Standard 2.0
 
 ```csharp
 var storage = CloudStorageAccount.FromConfigurationSetting("MyStorage");
