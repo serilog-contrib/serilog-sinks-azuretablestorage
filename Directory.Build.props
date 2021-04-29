@@ -17,4 +17,10 @@
         <AnalysisMode>AllEnabledByDefault</AnalysisMode>
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
     </PropertyGroup>
+
+    <!-- https://devblogs.microsoft.com/dotnet/producing-packages-with-source-link/ -->
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
 </Project>
