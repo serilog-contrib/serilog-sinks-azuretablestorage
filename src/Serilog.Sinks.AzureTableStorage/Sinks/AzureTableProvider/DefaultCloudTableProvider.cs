@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.Azure.Cosmos.Table;
 using System;
 using System.Threading;
+using Azure.Data.Tables;
 
 
 namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
@@ -22,28 +22,25 @@ namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
     class DefaultCloudTableProvider : ICloudTableProvider
     {
         readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        CloudTable _cloudTable;
+        TableClient _cloudTable;
 
-        public CloudTable GetCloudTable(CloudStorageAccount storageAccount, string storageTableName, bool bypassTableCreationValidation)
+        public TableClient GetCloudTable(TableServiceClient storageAccount, string storageTableName, bool bypassTableCreationValidation)
         {
-            if (_cloudTable == null)
-            {
-                CloudTableClient cloudTableClient = storageAccount.CreateCloudTableClient();
-                _cloudTable = cloudTableClient.GetTableReference(storageTableName);
+            if (_cloudTable != null) return _cloudTable;
+            _cloudTable = storageAccount.GetTableClient(storageTableName);
 
-                // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
-                // it does not already exists. So, if we are in that case, we ignore the error as per bypassTableCreationValidation.
-                try
+            // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
+            // it does not already exists. So, if we are in that case, we ignore the error as per bypassTableCreationValidation.
+            try
+            {
+                _cloudTable.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
+                if (!bypassTableCreationValidation)
                 {
-                    _cloudTable.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
-                }
-                catch (Exception ex)
-                {
-                    Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
-                    if (!bypassTableCreationValidation)
-                    {
-                        throw;
-                    }
+                    throw;
                 }
             }
             return _cloudTable;

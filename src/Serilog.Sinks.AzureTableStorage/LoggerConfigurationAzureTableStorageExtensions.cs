@@ -13,7 +13,8 @@
 // limitations under the License.
 
 using System;
-using Microsoft.Azure.Cosmos.Table;
+using Azure;
+using Azure.Data.Tables;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
@@ -60,7 +61,7 @@ namespace Serilog
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
         public static LoggerConfiguration AzureTableStorage(
             this LoggerSinkConfiguration loggerConfiguration,
-            CloudStorageAccount storageAccount,
+            TableServiceClient storageAccount,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             IFormatProvider formatProvider = null,
             string storageTableName = null,
@@ -206,7 +207,7 @@ namespace Serilog
         public static LoggerConfiguration AzureTableStorage(
             this LoggerSinkConfiguration loggerConfiguration,
             ITextFormatter formatter,
-            CloudStorageAccount storageAccount,            
+            TableServiceClient storageAccount,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             string storageTableName = null,
             bool writeInBatches = false,
@@ -257,7 +258,7 @@ namespace Serilog
         public static LoggerConfiguration AzureTableStorage(
             this LoggerSinkConfiguration loggerConfiguration,
             ITextFormatter formatter,
-            string connectionString,            
+            string connectionString,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             string storageTableName = null,
             bool writeInBatches = false,
@@ -273,7 +274,7 @@ namespace Serilog
 
             try
             {
-                var storageAccount = CloudStorageAccount.Parse(connectionString);
+                var storageAccount = new TableServiceClient(connectionString);
                 return AzureTableStorage(loggerConfiguration, formatter, storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, bypassTableCreationValidation, cloudTableProvider);
             }
             catch (Exception ex)
@@ -308,7 +309,7 @@ namespace Serilog
             this LoggerSinkConfiguration loggerConfiguration,
             ITextFormatter formatter,
             string sharedAccessSignature,
-            string accountName,            
+            string accountName,
             Uri tableEndpoint = null,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
             string storageTableName = null,
@@ -325,16 +326,13 @@ namespace Serilog
 
             try
             {
-                var credentials = new StorageCredentials(sharedAccessSignature);
-                CloudStorageAccount storageAccount;
+                var credentials = new AzureSasCredential(sharedAccessSignature);
+                TableServiceClient storageAccount = null;
                 if (tableEndpoint == null)
                 {
-                    storageAccount = new CloudStorageAccount(credentials, accountName, endpointSuffix: null, useHttps: true);
+                    tableEndpoint = new Uri($"https://{accountName}.table.core.windows.net/");
                 }
-                else
-                {
-                    storageAccount = new CloudStorageAccount(credentials, tableEndpoint);
-                }
+                storageAccount = new TableServiceClient(tableEndpoint, credentials);
 
                 // We set bypassTableCreationValidation to true explicitly here as the the SAS URL might not have enough permissions to query if the table exists.
                 return AzureTableStorage(loggerConfiguration, formatter, storageAccount, restrictedToMinimumLevel, storageTableName, writeInBatches, period, batchPostingLimit, keyGenerator, true, cloudTableProvider);
