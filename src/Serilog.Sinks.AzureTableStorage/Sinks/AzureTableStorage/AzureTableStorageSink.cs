@@ -14,7 +14,7 @@
 
 using System;
 using System.Threading;
-using Microsoft.Azure.Cosmos.Table;
+using Azure.Data.Tables;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
@@ -31,7 +31,7 @@ namespace Serilog.Sinks.AzureTableStorage
         readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
         readonly ITextFormatter _textFormatter;
         readonly IKeyGenerator _keyGenerator;
-        readonly CloudStorageAccount _storageAccount;
+        readonly TableServiceClient _storageAccount;
         readonly string _storageTableName;
         readonly bool _bypassTableCreationValidation;
         readonly ICloudTableProvider _cloudTableProvider;
@@ -46,7 +46,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
         /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         public AzureTableStorageSink(
-            CloudStorageAccount storageAccount,
+            TableServiceClient storageAccount,
             ITextFormatter textFormatter,
             string storageTableName = null,
             IKeyGenerator keyGenerator = null,
@@ -81,8 +81,7 @@ namespace Serilog.Sinks.AzureTableStorage
                 _keyGenerator.GenerateRowKey(logEvent)
                 );
 
-            table.ExecuteAsync(TableOperation.InsertOrMerge(logEventEntity))
-                .SyncContextSafeWait(_waitTimeoutMilliseconds);
+            table.UpsertEntityAsync(logEventEntity, TableUpdateMode.Merge).SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
     }
 }

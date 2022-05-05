@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.Azure.Cosmos.Table;
+using Azure.Data.Tables;
 
 namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
 {
     public interface ICloudTableProvider
     {
-        CloudTable GetCloudTable(CloudStorageAccount storageAccount, string storageTableName, bool bypassTableCreationValidation);
+        TableClient GetCloudTable(TableServiceClient storageAccount, string storageTableName, bool bypassTableCreationValidation);
     }
 }

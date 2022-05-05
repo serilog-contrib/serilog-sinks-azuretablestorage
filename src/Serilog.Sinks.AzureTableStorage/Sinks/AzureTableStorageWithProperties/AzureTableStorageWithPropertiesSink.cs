@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.Azure.Cosmos.Table;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
@@ -20,6 +19,7 @@ using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
 using System;
 using System.Threading;
+using Azure.Data.Tables;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -33,7 +33,7 @@ namespace Serilog.Sinks.AzureTableStorage
         readonly string _additionalRowKeyPostfix;
         readonly string[] _propertyColumns;
         readonly IKeyGenerator _keyGenerator;
-        readonly CloudStorageAccount _storageAccount;
+        readonly TableServiceClient _storageAccount;
         readonly string _storageTableName;
         readonly bool _bypassTableCreationValidation;
         readonly ICloudTableProvider _cloudTableProvider;
@@ -49,7 +49,8 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
         /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
         /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
-        public AzureTableStorageWithPropertiesSink(CloudStorageAccount storageAccount,
+        public AzureTableStorageWithPropertiesSink(
+            TableServiceClient storageAccount,
             IFormatProvider formatProvider,
             string storageTableName = null,
             string additionalRowKeyPostfix = null,
@@ -81,9 +82,9 @@ namespace Serilog.Sinks.AzureTableStorage
         public void Emit(LogEvent logEvent)
         {
             var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
-            var op = TableOperation.InsertOrMerge(AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator, _propertyColumns));
-
-            table.ExecuteAsync(op).SyncContextSafeWait(_waitTimeoutMilliseconds);
+            var entity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator, _propertyColumns);
+            table.UpsertEntityAsync(entity, TableUpdateMode.Merge)
+                .SyncContextSafeWait(_waitTimeoutMilliseconds);
         }
     }
 }

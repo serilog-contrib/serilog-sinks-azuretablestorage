@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.Azure.Cosmos.Table;
 using Serilog.Events;
 using System;
 
@@ -32,7 +31,7 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="format">A format string applied to the value, or null.</param>
         /// <param name="formatProvider">A format provider to apply to the value, or null to use the default.</param>
         /// <returns>An Azure Storage entity EntityProperty</returns>
-        public static EntityProperty ToEntityProperty(LogEventPropertyValue value, string format = null, IFormatProvider formatProvider = null)
+        public static object ToEntityProperty(LogEventPropertyValue value, string format = null, IFormatProvider formatProvider = null)
         {
             if (value is ScalarValue scalar)
             {
@@ -41,39 +40,39 @@ namespace Serilog.Sinks.AzureTableStorage
 
             if (value is DictionaryValue dict)
             {
-                return new EntityProperty(dict.ToString(format, formatProvider));
+                return dict.ToString(format, formatProvider);
             }
 
             if (value is SequenceValue seq)
             {
-                return new EntityProperty(seq.ToString(format, formatProvider));
+                return seq.ToString(format, formatProvider);
             }
 
             if (value is StructureValue str)
             {
-                return new EntityProperty(str.ToString(format, formatProvider));
+                return str.ToString(format, formatProvider);
             }
 
             return null;
         }
 
-        private static EntityProperty SimplifyScalar(object value)
+        private static object SimplifyScalar(object value)
         {
-            if (value == null) return new EntityProperty((byte[])null);
+            if (value == null) return null;
 
             var valueType = value.GetType();
 
-            if (valueType == typeof(byte[])) return new EntityProperty((byte[])value);
-            if (valueType == typeof(bool)) return new EntityProperty((bool)value);
-            if (valueType == typeof(DateTimeOffset)) return new EntityProperty((DateTimeOffset)value);
-            if (valueType == typeof(DateTime)) return new EntityProperty((DateTime)value);
-            if (valueType == typeof(double)) return new EntityProperty((double)value);
-            if (valueType == typeof(Guid)) return new EntityProperty((Guid)value);
-            if (valueType == typeof(int)) return new EntityProperty((int)value);
-            if (valueType == typeof(long)) return new EntityProperty((long)value);
-            if (valueType == typeof(string)) return new EntityProperty((string)value);
+            if (valueType == typeof(byte[])) return (byte[])value;
+            if (valueType == typeof(bool)) return (bool)value;
+            if (valueType == typeof(DateTimeOffset)) return (DateTimeOffset)value;
+            if (valueType == typeof(DateTime)) return (DateTime)value;
+            if (valueType == typeof(double)) return (double)value;
+            if (valueType == typeof(Guid)) return (Guid)value;
+            if (valueType == typeof(int)) return (int)value;
+            if (valueType == typeof(long)) return (long)value;
+            if (valueType == typeof(string)) return (string)value;
 
-            return new EntityProperty(value.ToString());
+            return value.ToString();
         }
     }
 }

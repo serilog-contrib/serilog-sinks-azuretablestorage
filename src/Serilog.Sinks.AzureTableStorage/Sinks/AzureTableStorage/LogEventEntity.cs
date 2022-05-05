@@ -14,7 +14,8 @@
 
 using System;
 using System.IO;
-using Microsoft.Azure.Cosmos.Table;
+using Azure;
+using Azure.Data.Tables;
 using Serilog.Events;
 using Serilog.Formatting;
 
@@ -24,7 +25,7 @@ namespace Serilog.Sinks.AzureTableStorage
     /// <summary>
     /// Represents a single log event for the Serilog Azure Table Storage Sink.
     /// </summary>
-    public class LogEventEntity : TableEntity
+    public class LogEventEntity : ITableEntity
     {
         /// <summary>
         /// Default constructor for the Storage Client library to re-hydrate entities when querying.
@@ -35,7 +36,6 @@ namespace Serilog.Sinks.AzureTableStorage
         /// Create a log event entity from a Serilog <see cref="LogEvent"/>.
         /// </summary>
         /// <param name="log">The event to log</param>
-        /// <param name="formatProvider"></param>
         /// <param name="textFormatter"></param>
         /// <param name="partitionKey">partition key to store</param>
         /// <param name="rowKey">row key to store</param>
@@ -54,9 +54,11 @@ namespace Serilog.Sinks.AzureTableStorage
             RenderedMessage = log.RenderMessage();
 
             //Use the underlying TextFormatter to serialise the entire JSON object for the data column
-            var s = new StringWriter();
-            textFormatter.Format(log, s);
-            Data = s.ToString();
+            using (var s = new StringWriter())
+            {
+                textFormatter.Format(log, s);
+                Data = s.ToString();
+            }
         }
 
         // http://msdn.microsoft.com/en-us/library/windowsazure/dd179338.aspx
@@ -65,6 +67,14 @@ namespace Serilog.Sinks.AzureTableStorage
             rowKey = ObjectNaming.KeyFieldValueCharactersNotAllowedMatch.Replace(rowKey, "");
             return rowKey.Length > 1024 ? rowKey.Substring(0, 1024) : rowKey;
         }
+
+        /// <summary>
+        /// <c>ITableEntity</c> property implementations
+        /// </summary>
+        public string PartitionKey { get; set; }
+        public string RowKey { get; set; }
+        public DateTimeOffset? Timestamp { get; set; }
+        public ETag ETag { get; set; }
 
         /// <summary>
         /// The template that was used for the log message.
