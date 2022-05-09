@@ -62,6 +62,11 @@ namespace Serilog.Sinks.AzureTableStorage
         }
 
         // http://msdn.microsoft.com/en-us/library/windowsazure/dd179338.aspx
+        /// <summary>
+        /// Gets the valid row key.
+        /// </summary>
+        /// <param name="rowKey">The row key.</param>
+        /// <returns></returns>
         public static string GetValidRowKey(string rowKey)
         {
             rowKey = ObjectNaming.KeyFieldValueCharactersNotAllowedMatch.Replace(rowKey, "");
@@ -69,11 +74,38 @@ namespace Serilog.Sinks.AzureTableStorage
         }
 
         /// <summary>
-        /// <c>ITableEntity</c> property implementations
+        ///   <c>ITableEntity</c> property implementations
         /// </summary>
+        /// <value>
+        /// A string containing the partition key for the entity.
+        /// </value>
         public string PartitionKey { get; set; }
+
+        /// <summary>
+        /// The row key is a unique identifier for an entity within a given partition. Together the <see cref="P:Azure.Data.Tables.ITableEntity.PartitionKey" /> and RowKey uniquely identify every entity within a table.
+        /// </summary>
+        /// <value>
+        /// A string containing the row key for the entity.
+        /// </value>
         public string RowKey { get; set; }
+
+        /// <summary>
+        /// The Timestamp property is a DateTime value that is maintained on the server side to record the time an entity was last modified.
+        /// The Table service uses the Timestamp property internally to provide optimistic concurrency. The value of Timestamp is a monotonically increasing value,
+        /// meaning that each time the entity is modified, the value of Timestamp increases for that entity.
+        /// This property should not be set on insert or update operations (the value will be ignored).
+        /// </summary>
+        /// <value>
+        /// A <see cref="T:System.DateTimeOffset" /> containing the timestamp of the entity.
+        /// </value>
         public DateTimeOffset? Timestamp { get; set; }
+
+        /// <summary>
+        /// Gets or sets the entity's ETag.
+        /// </summary>
+        /// <value>
+        /// A string containing the ETag value for the entity.
+        /// </value>
         public ETag ETag { get; set; }
 
         /// <summary>

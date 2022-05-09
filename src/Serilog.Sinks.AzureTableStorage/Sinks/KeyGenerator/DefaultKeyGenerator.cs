@@ -3,10 +3,19 @@ using Serilog.Events;
 
 namespace Serilog.Sinks.AzureTableStorage.KeyGenerator
 {
+    /// <summary>
+    /// Default document key generator
+    /// </summary>
     public class DefaultKeyGenerator : IKeyGenerator
     {
+        /// <summary>
+        /// The row identifier
+        /// </summary>
         protected long RowId;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DefaultKeyGenerator"/> class.
+        /// </summary>
         public DefaultKeyGenerator()
         {
             RowId = 0L;

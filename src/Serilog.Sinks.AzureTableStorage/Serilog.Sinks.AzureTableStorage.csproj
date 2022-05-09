@@ -3,46 +3,34 @@
   <PropertyGroup>
     <Description>Serilog event sink that writes to Azure Table Storage over HTTP.</Description>
     <VersionPrefix>6.0.0</VersionPrefix>
-    <!--<VersionSuffix>beta</VersionSuffix>-->
     <Authors>Robert Moore</Authors>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
     <AssemblyName>Serilog.Sinks.AzureTableStorage</AssemblyName>
     <AssemblyOriginatorKeyFile>../../assets/Serilog.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
-    <RootNamespace>Serilog</RootNamespace>
     <PackageId>Serilog.Sinks.AzureTableStorage</PackageId>
     <PackageTags>serilog;logging;azure</PackageTags>
     <PackageIcon>serilog-sink-nuget.png</PackageIcon>
-    <IncludeSource>false</IncludeSource>
-    <IsPackable>true</IsPackable>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <LicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</LicenseUrl>
-    <!-- Optional: A URL for the project homepage or source repository.-->
-    <PackageProjectUrl>https://github.com/serilog/serilog-sinks-azuretablestorage</PackageProjectUrl>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <!--Optional: Source Link automatically adds RepositoryUrl and RepositoryType metadata to the NuGet package-->
-    <RepositoryUrl>https://github.com/serilog/serilog-sinks-azuretablestorage.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/serilog-contrib/serilog-sinks-azuretablestorage</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/serilog-contrib/serilog-sinks-azuretablestorage.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <!-- Recommended: Embed symbols containing Source Link in the main file (exe/dll) -->
-    <DebugType>embedded</DebugType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>Serilog</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Copyright>Copyright © Serilog Contributors 2022</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="images\serilog-sink-nuget.png" Pack="true" PackagePath="\"/>
+    <None Include="images\serilog-sink-nuget.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="Serilog.Sinks.PeriodicBatching" Version="2.3.0" />
-    <PackageReference Include="Azure.Data.Tables" Version="12.3.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+    <PackageReference Include="Serilog" Version="2.11.0" />
+    <PackageReference Include="Serilog.Sinks.PeriodicBatching" Version="2.3.1" />
+    <PackageReference Include="Azure.Data.Tables" Version="12.5.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 </Project>

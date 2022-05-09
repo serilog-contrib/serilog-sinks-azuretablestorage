@@ -64,7 +64,9 @@ namespace Serilog.Sinks.AzureTableStorage
             string[] propertyColumns = null,
             bool bypassTableCreationValidation = false,
             ICloudTableProvider cloudTableProvider = null)
+#pragma warning disable CS0618 // Type or member is obsolete
             : base(batchSizeLimit, period)
+#pragma warning restore CS0618 // Type or member is obsolete
         {
             if (string.IsNullOrEmpty(storageTableName))
             {
@@ -82,6 +84,14 @@ namespace Serilog.Sinks.AzureTableStorage
             _keyGenerator = keyGenerator ?? new PropertiesKeyGenerator();
         }
 
+        /// <summary>
+        /// Emit a batch of log events, running asynchronously.
+        /// </summary>
+        /// <param name="events">The events to emit.</param>
+        /// <remarks>
+        /// Override either <see cref="M:Serilog.Sinks.PeriodicBatching.PeriodicBatchingSink.EmitBatchAsync(System.Collections.Generic.IEnumerable{Serilog.Events.LogEvent})" /> or <see cref="M:Serilog.Sinks.PeriodicBatching.PeriodicBatchingSink.EmitBatch(System.Collections.Generic.IEnumerable{Serilog.Events.LogEvent})" />,
+        /// not both.
+        /// </remarks>
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
             var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);

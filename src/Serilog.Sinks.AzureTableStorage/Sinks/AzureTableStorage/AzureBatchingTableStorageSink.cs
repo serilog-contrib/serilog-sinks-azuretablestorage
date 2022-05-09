@@ -40,14 +40,13 @@ namespace Serilog.Sinks.AzureTableStorage
         /// Construct a sink that saves logs to the specified storage account.
         /// </summary>
         /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="textFormatter"></param>
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
         /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
         /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         public AzureBatchingTableStorageSink(
             TableServiceClient storageAccount,
-            IFormatProvider formatProvider,
             ITextFormatter textFormatter,
             int batchSizeLimit,
             TimeSpan period,
@@ -77,7 +76,9 @@ namespace Serilog.Sinks.AzureTableStorage
             IKeyGenerator keyGenerator = null,
             bool bypassTableCreationValidation = false,
             ICloudTableProvider cloudTableProvider = null)
+#pragma warning disable CS0618 // Type or member is obsolete
             : base(batchSizeLimit, period)
+#pragma warning restore CS0618 // Type or member is obsolete
         {
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
                 throw new ArgumentException("batchSizeLimit must be between 1 and 100 for Azure Table Storage");
@@ -96,6 +97,14 @@ namespace Serilog.Sinks.AzureTableStorage
             _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider();
         }
 
+        /// <summary>
+        /// Emit a batch of log events, running asynchronously.
+        /// </summary>
+        /// <param name="events">The events to emit.</param>
+        /// <remarks>
+        /// Override either <see cref="M:Serilog.Sinks.PeriodicBatching.PeriodicBatchingSink.EmitBatchAsync(System.Collections.Generic.IEnumerable{Serilog.Events.LogEvent})" /> or <see cref="M:Serilog.Sinks.PeriodicBatching.PeriodicBatchingSink.EmitBatch(System.Collections.Generic.IEnumerable{Serilog.Events.LogEvent})" />,
+        /// not both.
+        /// </remarks>
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
             var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
