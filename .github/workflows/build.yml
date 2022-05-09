@@ -36,7 +36,7 @@ jobs:
 
       - name: Create Packages
         if: success() && github.event_name != 'pull_request'
-        run: 'dotnet pack --configuration Release --include-symbols --include-source --no-build --no-restore --output "${{github.workspace}}/artifacts"'
+        run: 'dotnet pack --configuration Release --include-symbols --include-source --no-build --no-restore --output "${{github.workspace}}/artifacts" -p:PackageVersion="${{env.BUILD_VERSION}}"'
 
       - name: Upload Artifacts
         if: success() && github.event_name != 'pull_request'
