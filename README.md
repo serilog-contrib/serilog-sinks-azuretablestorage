@@ -4,10 +4,8 @@ Writes to a table in [Azure Table Storage](https://azure.microsoft.com/en-us/ser
 **Package** - [Serilog.Sinks.AzureTableStorage](http://nuget.org/packages/serilog.sinks.azuretablestorage) | **Platforms** - .NET Standard 2.0
 
 ```csharp
-var storage = CloudStorageAccount.FromConfigurationSetting("MyStorage");
-
 var log = new LoggerConfiguration()
-    .WriteTo.AzureTableStorage(storage)
+    .WriteTo.AzureTableStorage("<connectionString>")
     .CreateLogger();
 ```
 
@@ -49,4 +47,6 @@ In your application's `App.config` or `Web.config` file, specify the file sink a
     <add key="serilog:using:AzureTableStorage" value="Serilog.Sinks.AzureTableStorage" />
     <add key="serilog:write-to:AzureTableStorage.connectionString" value="DefaultEndpointsProtocol=https;AccountName=ACCOUNT_NAME;AccountKey=KEY;EndpointSuffix=core.windows.net" />
     <add key="serilog:write-to:AzureTableStorage.formatter" value="Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact" />
+  </appSettings>
+</configuration>
 ```

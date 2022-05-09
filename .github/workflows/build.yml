@@ -1,8 +1,8 @@
 name: Build
 
 env:
-  BUILD_VERSION: "7.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/main') && '' || '-beta'}}"
-  BUILD_INFORMATION: "7.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/main') && '' || '-beta'}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
+  BUILD_VERSION: "7.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/master') && '' || '-beta'}}"
+  BUILD_INFORMATION: "7.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/master') && '' || '-beta'}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
 
 on: [push, pull_request]
 
@@ -52,7 +52,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Release Packages
-        if: success() && startsWith(github.ref, 'refs/heads/main')
+        if: success() && startsWith(github.ref, 'refs/heads/master')
         run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY} --skip-duplicate
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
