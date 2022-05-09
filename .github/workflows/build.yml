@@ -1,9 +1,8 @@
 name: Build
 
 env:
-  BUILD_SUFFIX: ${{ startsWith(github.ref, 'refs/heads/main') && '' || '-beta' }}
-  BUILD_VERSION: "2.0.${{github.run_number}}$BUILD_SUFFIX"
-  BUILD_INFORMATION: "$BUILD_VERSION+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
+  BUILD_VERSION: "2.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/main') && '' || '-beta'}}"
+  BUILD_INFORMATION: "2.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/main') && '' || '-beta'}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
 
 on: [push, pull_request]
 
