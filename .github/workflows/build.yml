@@ -1,7 +1,7 @@
 name: Build
 
 env:
-  BUILD_SUFFIX: ${{ startsWith(github.ref, 'refs/heads/main') && '' || '-dev-' + github.run_attempt }}
+  BUILD_SUFFIX: ${{ startsWith(github.ref, 'refs/heads/main') && '' || '-beta' }}
   BUILD_VERSION: "2.0.${{github.run_number}}${{env.BUILD_SUFFIX}}"
   BUILD_INFORMATION: "${{env.BUILD_VERSION}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
 
