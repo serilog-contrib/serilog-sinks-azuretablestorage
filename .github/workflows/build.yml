@@ -47,9 +47,12 @@ jobs:
 
       - name: Publish Build Packages
         if: success() && github.event_name != 'pull_request'
-        run: dotnet nuget push ./artifacts/*.nupkg --skip-duplicate --no-symbols true
+        run: dotnet nuget push ./artifacts/*.nupkg --source https://nuget.pkg.github.com/serilog-contrib/index.json --api-key ${GITHUB_TOKEN} --skip-duplicate --no-symbols true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Release Packages
         if: success() && startsWith(github.ref, 'refs/heads/main')
-        run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
-
+        run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY} --skip-duplicate
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
