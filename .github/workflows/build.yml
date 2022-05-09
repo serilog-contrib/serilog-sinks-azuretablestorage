@@ -45,11 +45,11 @@ jobs:
           name: artifacts
           path: '${{github.workspace}}/artifacts'
 
+      - name: Publish Build Packages
+        if: success() && github.event_name != 'pull_request'
+        run: dotnet nuget push ./artifacts/*.nupkg --skip-duplicate --no-symbols true
+
       - name: Publish Release Packages
         if: success() && startsWith(github.ref, 'refs/heads/main')
-        run: |
-          for package in $(find -name "${{github.workspace}}/artifacts/*.nupkg"); do
-            echo "${0##*/}": Pushing $package...
-            dotnet nuget push $package --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
-          done
+        run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
 
