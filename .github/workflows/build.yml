@@ -1,8 +1,8 @@
 name: Build
 
 env:
-  BUILD_VERSION: "2.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/main') && '' || '-beta'}}"
-  BUILD_INFORMATION: "2.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/main') && '' || '-beta'}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
+  BUILD_VERSION: "7.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/main') && '' || '-beta'}}"
+  BUILD_INFORMATION: "7.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/main') && '' || '-beta'}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
 
 on: [push, pull_request]
 
@@ -36,19 +36,19 @@ jobs:
 
       - name: Create Packages
         if: success() && github.event_name != 'pull_request'
-        run: 'dotnet pack --configuration Release --include-symbols --include-source --no-build --no-restore'
+        run: 'dotnet pack --configuration Release --include-symbols --include-source --no-build --no-restore --output "${{github.workspace}}/artifacts"'
 
       - name: Upload Artifacts
         if: success() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v1.0.0
         with:
           name: artifacts
-          path: artifacts
+          path: '${{github.workspace}}/artifacts'
 
       - name: Publish Release Packages
         if: success() && startsWith(github.ref, 'refs/heads/main')
         run: |
-          for package in $(find -name "*.nupkg"); do
+          for package in $(find -name "${{github.workspace}}/artifacts/*.nupkg"); do
             echo "${0##*/}": Pushing $package...
             dotnet nuget push $package --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
           done
