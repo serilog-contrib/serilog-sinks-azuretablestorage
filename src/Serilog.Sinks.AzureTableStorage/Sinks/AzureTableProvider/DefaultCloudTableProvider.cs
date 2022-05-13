@@ -13,27 +13,23 @@
 // limitations under the License.
 
 using System;
-using System.Threading;
 using Azure.Data.Tables;
-
 
 namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
 {
     class DefaultCloudTableProvider : ICloudTableProvider
     {
-        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        TableClient _cloudTable;
+        TableClient _tableClient;
 
-        public TableClient GetCloudTable(TableServiceClient storageAccount, string storageTableName, bool bypassTableCreationValidation)
+        public TableClient GetCloudTable(TableServiceClient tableServiceClient, string storageTableName, bool bypassTableCreationValidation)
         {
-            if (_cloudTable != null) return _cloudTable;
-            _cloudTable = storageAccount.GetTableClient(storageTableName);
+            if (_tableClient != null) return _tableClient;
 
             // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
             // it does not already exists. So, if we are in that case, we ignore the error as per bypassTableCreationValidation.
             try
             {
-                _cloudTable.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
+                tableServiceClient.CreateTableIfNotExistsWithout409(storageTableName);
             }
             catch (Exception ex)
             {
@@ -43,7 +39,8 @@ namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
                     throw;
                 }
             }
-            return _cloudTable;
+            _tableClient = tableServiceClient.GetTableClient(storageTableName);
+            return _tableClient;
         }
     }
 }
