@@ -50,3 +50,7 @@ In your application's `App.config` or `Web.config` file, specify the file sink a
   </appSettings>
 </configuration>
 ```
+
+### Async approach
+It is possible to configure the collector using [Serilog.Sinks.Async](https://github.com/serilog/serilog-sinks-async) to have an async approach.
+
