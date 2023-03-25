@@ -1,10 +1,18 @@
 name: Build
 
 env:
-  BUILD_VERSION: "7.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/master') && '' || '-beta'}}"
-  BUILD_INFORMATION: "7.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/master') && '' || '-beta'}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
+  BUILD_VERSION: "7.0.${{github.run_number}}${{github.ref != 'refs/heads/master' && '-beta' || ''}}"
+  BUILD_INFORMATION: "7.0.${{github.run_number}}${{github.ref != 'refs/heads/master' && '-beta' || ''}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
 
 jobs:
   build:
