@@ -1,14 +1,11 @@
-# Serilog.Sinks.AzureTableStorage [![Build status](https://ci.appveyor.com/api/projects/status/bb9v4y9dguyn7w9a/branch/master?svg=true)](https://ci.appveyor.com/project/serilog/serilog-sinks-azuretablestorage/branch/master)
+# Serilog.Sinks.AzureTableStorage [![Nuget](https://img.shields.io/nuget/v/serilog.sinks.azuretablestorage)](http://nuget.org/packages/serilog.sinks.azuretablestorage)
+Writes to a table in [Azure Table Storage](https://azure.microsoft.com/en-us/services/storage/tables/).
 
-Writes to a table in [Windows Azure Table Storage](https://azure.microsoft.com/en-us/documentation/articles/storage-dotnet-how-to-use-tables/).
-
-**Package** - [Serilog.Sinks.AzureTableStorage](http://nuget.org/packages/serilog.sinks.azuretablestorage) | **Platforms** - .NET 4.5
+**Package** - [Serilog.Sinks.AzureTableStorage](http://nuget.org/packages/serilog.sinks.azuretablestorage) | **Platforms** - .NET Standard 2.0
 
 ```csharp
-var storage = CloudStorageAccount.FromConfigurationSetting("MyStorage");
-
 var log = new LoggerConfiguration()
-    .WriteTo.AzureTableStorage(storage)
+    .WriteTo.AzureTableStorage("<connectionString>")
     .CreateLogger();
 ```
 
@@ -50,4 +47,10 @@ In your application's `App.config` or `Web.config` file, specify the file sink a
     <add key="serilog:using:AzureTableStorage" value="Serilog.Sinks.AzureTableStorage" />
     <add key="serilog:write-to:AzureTableStorage.connectionString" value="DefaultEndpointsProtocol=https;AccountName=ACCOUNT_NAME;AccountKey=KEY;EndpointSuffix=core.windows.net" />
     <add key="serilog:write-to:AzureTableStorage.formatter" value="Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact" />
+  </appSettings>
+</configuration>
 ```
+
+### Async approach
+It is possible to configure the collector using [Serilog.Sinks.Async](https://github.com/serilog/serilog-sinks-async) to have an async approach.
+

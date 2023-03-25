@@ -12,13 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
+using Azure.Data.Tables;
 
 namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
 {
+    /// <summary>
+    /// TableClient Provider
+    /// </summary>
     public interface ICloudTableProvider
     {
-        CloudTable GetCloudTable(CloudStorageAccount storageAccount, string storageTableName, bool bypassTableCreationValidation);
+        /// <summary>
+        /// Gets the cloud table.
+        /// </summary>
+        /// <param name="storageAccount">The storage account.</param>
+        /// <param name="storageTableName">Name of the storage table.</param>
+        /// <param name="bypassTableCreationValidation">if set to <c>true</c> [bypass table creation validation].</param>
+        /// <returns></returns>
+        TableClient GetCloudTable(TableServiceClient storageAccount, string storageTableName, bool bypassTableCreationValidation);
     }
 }

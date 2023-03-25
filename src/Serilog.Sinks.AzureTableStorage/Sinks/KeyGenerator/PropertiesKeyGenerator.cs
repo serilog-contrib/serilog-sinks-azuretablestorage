@@ -6,6 +6,10 @@ using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
 namespace Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator
 {
+    /// <summary>
+    /// Property Key Generator
+    /// </summary>
+    /// <seealso cref="Serilog.Sinks.AzureTableStorage.KeyGenerator.DefaultKeyGenerator" />
     public class PropertiesKeyGenerator : DefaultKeyGenerator
     {
         // Valid RowKey name characters

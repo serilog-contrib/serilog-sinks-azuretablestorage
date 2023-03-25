@@ -1,20 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27128.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32421.90
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Artifacts", "Artifacts", "{40D1EC3F-DCD9-47EB-8629-54D71AC31757}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		appveyor.yml = appveyor.yml
 		Build.ps1 = Build.ps1
+		.github\workflows\build.yml = .github\workflows\build.yml
 		CHANGES.md = CHANGES.md
 		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Serilog.Sinks.AzureTableStorage", "src\Serilog.Sinks.AzureTableStorage\Serilog.Sinks.AzureTableStorage.csproj", "{EDB6E773-0A33-4A88-81BC-3B24ABFEBA61}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Serilog.Sinks.AzureTableStorageWithProperties.Tests", "test\Serilog.Sinks.AzureTableStorageWithProperties.Tests\Serilog.Sinks.AzureTableStorageWithProperties.Tests.csproj", "{2740763E-959A-4AAD-BFC9-5B428393DFDE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Serilog.Sinks.AzureTableStorage.Tests", "test\Serilog.Sinks.AzureTableStorage.Tests\Serilog.Sinks.AzureTableStorage.Tests.csproj", "{2740763E-959A-4AAD-BFC9-5B428393DFDE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

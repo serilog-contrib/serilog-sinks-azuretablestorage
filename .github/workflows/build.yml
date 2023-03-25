@@ -1,0 +1,71 @@
+name: Build
+
+env:
+  BUILD_VERSION: "7.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/master') && '' || '-beta'}}"
+  BUILD_INFORMATION: "7.0.${{github.run_number}}${{startsWith(github.ref, 'refs/heads/master') && '' || '-beta'}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    services:
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite
+        ports:
+          - 10000:10000
+          - 10001:10001
+          - 10002:10002
+        volumes:
+          - azurite_data:/data mcr.microsoft.com/azure-storage/azurite
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: | 
+                3.1.x
+                6.0.x
+
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Build Project
+        run: 'dotnet build --no-restore --configuration Release -p:Version="${{env.BUILD_VERSION}}" -p:InformationalVersion="${{env.BUILD_INFORMATION}}"'
+
+      - name: Test Project
+        run: 'dotnet test --no-build --no-restore --configuration Release'
+
+      - name: Create Packages
+        if: success() && github.event_name != 'pull_request'
+        run: 'dotnet pack --configuration Release --include-symbols --include-source --no-build --no-restore --output "${{github.workspace}}/artifacts" -p:PackageVersion="${{env.BUILD_VERSION}}"'
+
+      - name: Upload Artifacts
+        if: success() && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: '${{github.workspace}}/artifacts'
+
+      - name: Publish Build Packages
+        if: success() && github.event_name != 'pull_request'
+        run: dotnet nuget push ./artifacts/*.nupkg --source https://nuget.pkg.github.com/serilog-contrib/index.json --api-key ${GITHUB_TOKEN} --skip-duplicate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        if: success() && startsWith(github.ref, 'refs/heads/master')
+        run: 'gh release create "${{env.BUILD_VERSION}}" ./artifacts/*.nupkg --title "v${{env.BUILD_VERSION}}"'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Release Packages
+        if: success() && startsWith(github.ref, 'refs/heads/master')
+        run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY} --skip-duplicate
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
@@ -21,8 +19,8 @@ using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
 using Serilog.Sinks.PeriodicBatching;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
+using Azure.Data.Tables;
 
 namespace Serilog.Sinks.AzureTableStorage
 {
@@ -36,7 +34,7 @@ namespace Serilog.Sinks.AzureTableStorage
         readonly string[] _propertyColumns;
         const int _maxAzureOperationsPerBatch = 100;
         readonly IKeyGenerator _keyGenerator;
-        readonly CloudStorageAccount _storageAccount;
+        readonly TableServiceClient _storageAccount;
         readonly string _storageTableName;
         readonly bool _bypassTableCreationValidation;
         readonly ICloudTableProvider _cloudTableProvider;
@@ -55,7 +53,8 @@ namespace Serilog.Sinks.AzureTableStorage
         /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
         /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
-        public AzureBatchingTableStorageWithPropertiesSink(CloudStorageAccount storageAccount,
+        public AzureBatchingTableStorageWithPropertiesSink(
+            TableServiceClient storageAccount,
             IFormatProvider formatProvider,
             int batchSizeLimit,
             TimeSpan period,
@@ -65,7 +64,9 @@ namespace Serilog.Sinks.AzureTableStorage
             string[] propertyColumns = null,
             bool bypassTableCreationValidation = false,
             ICloudTableProvider cloudTableProvider = null)
+#pragma warning disable CS0618 // Type or member is obsolete
             : base(batchSizeLimit, period)
+#pragma warning restore CS0618 // Type or member is obsolete
         {
             if (string.IsNullOrEmpty(storageTableName))
             {
@@ -83,11 +84,19 @@ namespace Serilog.Sinks.AzureTableStorage
             _keyGenerator = keyGenerator ?? new PropertiesKeyGenerator();
         }
 
+        /// <summary>
+        /// Emit a batch of log events, running asynchronously.
+        /// </summary>
+        /// <param name="events">The events to emit.</param>
+        /// <remarks>
+        /// Override either <see cref="M:Serilog.Sinks.PeriodicBatching.PeriodicBatchingSink.EmitBatchAsync(System.Collections.Generic.IEnumerable{Serilog.Events.LogEvent})" /> or <see cref="M:Serilog.Sinks.PeriodicBatching.PeriodicBatchingSink.EmitBatch(System.Collections.Generic.IEnumerable{Serilog.Events.LogEvent})" />,
+        /// not both.
+        /// </remarks>
         protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
             var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
             string lastPartitionKey = null;
-            TableBatchOperation operation = null;
+            var transactionActions = new List<TableTransactionAction>();
             var insertsPerOperation = 0;
 
             foreach (var logEvent in events)
@@ -107,24 +116,29 @@ namespace Serilog.Sinks.AzureTableStorage
                 if (insertsPerOperation == _maxAzureOperationsPerBatch)
                 {
                     // If there is an operation currently in use, execute it
-                    if (operation != null)
+                    if (transactionActions.Count > 0)
                     {
-                        await table.ExecuteBatchAsync(operation).ConfigureAwait(false);
+                        await table.SubmitTransactionAsync(transactionActions).ConfigureAwait(false);
                     }
 
                     // Create a new batch operation and zero count
-                    operation = new TableBatchOperation();
+                    transactionActions = new List<TableTransactionAction>();
                     insertsPerOperation = 0;
                 }
 
                 // Add current entry to the batch
-                operation.Add(TableOperation.InsertOrMerge(tableEntity));
+                var transactionAction =
+                    new TableTransactionAction(TableTransactionActionType.UpdateMerge, tableEntity);
+                transactionActions.Add(transactionAction);
 
                 insertsPerOperation++;
             }
 
             // Execute last batch
-            await table.ExecuteBatchAsync(operation).ConfigureAwait(false);
+            if (transactionActions.Count > 0)
+            {
+                await table.SubmitTransactionAsync(transactionActions).ConfigureAwait(false);
+            }
         }
     }
 }

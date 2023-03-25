@@ -13,40 +13,34 @@
 // limitations under the License.
 
 using System;
-using System.Threading;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
+using Azure.Data.Tables;
 
 namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
 {
     class DefaultCloudTableProvider : ICloudTableProvider
     {
-        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        CloudTable _cloudTable;
+        TableClient _tableClient;
 
-        public CloudTable GetCloudTable(CloudStorageAccount storageAccount, string storageTableName, bool bypassTableCreationValidation)
+        public TableClient GetCloudTable(TableServiceClient tableServiceClient, string storageTableName, bool bypassTableCreationValidation)
         {
-            if (_cloudTable == null)
-            {
-                var cloudTableClient = storageAccount.CreateCloudTableClient();
-                _cloudTable = cloudTableClient.GetTableReference(storageTableName);
+            if (_tableClient != null) return _tableClient;
 
-                // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
-                // it does not already exists. So, if we are in that case, we ignore the error as per bypassTableCreationValidation.
-                try
+            // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
+            // it does not already exists. So, if we are in that case, we ignore the error as per bypassTableCreationValidation.
+            try
+            {
+                tableServiceClient.CreateTableIfNotExistsWithout409(storageTableName);
+            }
+            catch (Exception ex)
+            {
+                Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
+                if (!bypassTableCreationValidation)
                 {
-                    _cloudTable.CreateIfNotExistsAsync().SyncContextSafeWait(_waitTimeoutMilliseconds);
-                }
-                catch (Exception ex)
-                {
-                    Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
-                    if (!bypassTableCreationValidation)
-                    {
-                        throw;
-                    }
+                    throw;
                 }
             }
-            return _cloudTable;
+            _tableClient = tableServiceClient.GetTableClient(storageTableName);
+            return _tableClient;
         }
     }
 }
