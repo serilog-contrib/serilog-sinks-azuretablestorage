@@ -1,11 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Azure.Data.Tables;
 using Azure.Data.Tables.Sas;
+
 using Serilog.Events;
 using Serilog.Parsing;
+
 using Xunit;
 
 namespace Serilog.Sinks.AzureTableStorage.Tests
@@ -18,7 +21,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         static async Task<IList<TableEntity>> TableQueryTakeDynamicAsync(TableClient table, int takeCount)
         {
             List<TableEntity> results = new List<TableEntity>();
-            await foreach(var page in table.QueryAsync<TableEntity>( _=> true, takeCount).AsPages())
+            await foreach (var page in table.QueryAsync<TableEntity>(_ => true, takeCount).AsPages())
             {
                 results.AddRange(page.Values);
             }
@@ -335,7 +338,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
 
             await table.DeleteAsync();
 
-            using(var sink = new AzureBatchingTableStorageWithPropertiesSink(storageAccount, null, 1000, TimeSpan.FromMinutes(1)))
+            using (var sink = new AzureBatchingTableStorageWithPropertiesSink(storageAccount, null, 1000, TimeSpan.FromMinutes(1)))
             {
                 var timestamp = new DateTimeOffset(2014, 12, 01, 18, 42, 20, 666, TimeSpan.FromHours(2));
                 var messageTemplate = "Some text";
@@ -365,9 +368,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
                 var template = new MessageTemplateParser().Parse(messageTemplate);
                 var properties = new List<LogEventProperty>();
 
-                for(int k = 0; k < 4; ++k)
+                for (int k = 0; k < 4; ++k)
                 {
-                    var timestamp = new DateTimeOffset(2014, 12, 01, 1+k, 42, 20, 666, TimeSpan.FromHours(2));
+                    var timestamp = new DateTimeOffset(2014, 12, 01, 1 + k, 42, 20, 666, TimeSpan.FromHours(2));
                     for (int i = 0; i < 2; ++i)
                     {
                         sink.Emit(new LogEvent(timestamp, LogEventLevel.Information, null, template, properties));

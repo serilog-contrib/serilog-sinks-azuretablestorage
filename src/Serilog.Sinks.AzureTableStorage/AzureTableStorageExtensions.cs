@@ -1,4 +1,5 @@
-﻿using System.Linq;
+using System.Linq;
+
 using Azure;
 using Azure.Data.Tables;
 using Azure.Data.Tables.Models;

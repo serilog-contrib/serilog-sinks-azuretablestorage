@@ -1,4 +1,5 @@
 using System.Threading;
+
 using Serilog.Events;
 
 namespace Serilog.Sinks.AzureTableStorage.KeyGenerator

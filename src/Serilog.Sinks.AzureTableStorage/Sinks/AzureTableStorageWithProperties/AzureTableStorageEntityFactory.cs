@@ -1,4 +1,4 @@
-﻿// Copyright 2014 Serilog Contributors
+// Copyright 2014 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ namespace Serilog.Sinks.AzureTableStorage
                 Timestamp = logEvent.Timestamp
             };
 
-            tableEntity["MessageTemplate"]= logEvent.MessageTemplate.Text;
+            tableEntity["MessageTemplate"] = logEvent.MessageTemplate.Text;
             tableEntity["Level"] = logEvent.Level.ToString();
             tableEntity["RenderedMessage"] = logEvent.RenderMessage(formatProvider);
 

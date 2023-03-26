@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Text.RegularExpressions;
+
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 

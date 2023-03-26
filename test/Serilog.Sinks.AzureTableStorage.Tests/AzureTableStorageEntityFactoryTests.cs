@@ -1,4 +1,4 @@
-﻿using Xunit;
+using Xunit;
 using Serilog.Events;
 using Serilog.Parsing;
 using System;
@@ -68,7 +68,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var messageSpace = 1024 - (level.ToString().Length + 1) - (1 + postLength);
 
             // Message up to available space, plus some characters (Z) that will be removed
-            var messageTemplate = new string('x', messageSpace-4) + "ABCD" + new string('Z', 20);
+            var messageTemplate = new string('x', messageSpace - 4) + "ABCD" + new string('Z', 20);
 
             var template = new MessageTemplateParser().Parse(messageTemplate);
             var properties = new List<LogEventProperty>();
@@ -78,7 +78,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var entity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, null, additionalRowKeyPostfix, new PropertiesKeyGenerator());
 
             // Row Key
-            var expectedRowKeyWithoutGuid = "Information|" + new string('x', messageSpace-4) + "ABCD|POSTFIX|";
+            var expectedRowKeyWithoutGuid = "Information|" + new string('x', messageSpace - 4) + "ABCD|POSTFIX|";
             var rowKeyWithoutGuid = entity.RowKey.Substring(0, expectedRowKeyWithoutGuid.Length);
             var rowKeyGuid = entity.RowKey.Substring(expectedRowKeyWithoutGuid.Length);
 
@@ -93,7 +93,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public void CreateEntityWithPropertiesShouldSupportAzureTableTypesForScalar()
         {
             var messageTemplate = "{ByteArray} {Boolean} {DateTime} {DateTimeOffset} {Double} {Guid} {Int} {Long} {String}";
-            var bytearrayValue = new byte[]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 250, 251, 252, 253, 254, 255 };
+            var bytearrayValue = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 250, 251, 252, 253, 254, 255 };
             var booleanValue = true;
             var datetimeValue = DateTime.UtcNow;
             var datetimeoffsetValue = new DateTimeOffset(datetimeValue, TimeSpan.FromHours(0));
@@ -246,7 +246,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             const string messageTemplate = "{IncludedProperty} {AdditionalProperty}";
             const string includedPropertyValue = "included value";
             const string excludedPropertyValue = "excluded value";
-            var includedProperties = new[] {"IncludedProperty"};
+            var includedProperties = new[] { "IncludedProperty" };
 
             var properties = new List<LogEventProperty> {
                 new LogEventProperty("IncludedProperty", new ScalarValue(includedPropertyValue)),

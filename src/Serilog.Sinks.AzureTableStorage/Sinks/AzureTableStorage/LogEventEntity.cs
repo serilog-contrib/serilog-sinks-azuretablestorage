@@ -1,4 +1,4 @@
-﻿// Copyright 2014 Serilog Contributors
+// Copyright 2014 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
 
 using System;
 using System.IO;
+
 using Azure;
 using Azure.Data.Tables;
+
 using Serilog.Events;
 using Serilog.Formatting;
 
