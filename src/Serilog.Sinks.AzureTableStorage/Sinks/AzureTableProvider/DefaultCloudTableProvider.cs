@@ -16,32 +16,31 @@ using System;
 
 using Azure.Data.Tables;
 
-namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider
+namespace Serilog.Sinks.AzureTableStorage.AzureTableProvider;
+
+class DefaultCloudTableProvider : ICloudTableProvider
 {
-    class DefaultCloudTableProvider : ICloudTableProvider
+    TableClient _tableClient;
+
+    public TableClient GetCloudTable(TableServiceClient tableServiceClient, string storageTableName, bool bypassTableCreationValidation)
     {
-        TableClient _tableClient;
+        if (_tableClient != null) return _tableClient;
 
-        public TableClient GetCloudTable(TableServiceClient tableServiceClient, string storageTableName, bool bypassTableCreationValidation)
+        // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
+        // it does not already exists. So, if we are in that case, we ignore the error as per bypassTableCreationValidation.
+        try
         {
-            if (_tableClient != null) return _tableClient;
-
-            // In some cases (e.g.: SAS URI), we might not have enough permissions to create the table if
-            // it does not already exists. So, if we are in that case, we ignore the error as per bypassTableCreationValidation.
-            try
-            {
-                tableServiceClient.CreateTableIfNotExistsWithout409(storageTableName);
-            }
-            catch (Exception ex)
-            {
-                Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
-                if (!bypassTableCreationValidation)
-                {
-                    throw;
-                }
-            }
-            _tableClient = tableServiceClient.GetTableClient(storageTableName);
-            return _tableClient;
+            tableServiceClient.CreateTableIfNotExistsWithout409(storageTableName);
         }
+        catch (Exception ex)
+        {
+            Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
+            if (!bypassTableCreationValidation)
+            {
+                throw;
+            }
+        }
+        _tableClient = tableServiceClient.GetTableClient(storageTableName);
+        return _tableClient;
     }
 }

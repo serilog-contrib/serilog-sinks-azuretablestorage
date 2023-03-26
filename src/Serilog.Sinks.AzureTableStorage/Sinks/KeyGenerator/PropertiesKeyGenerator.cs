@@ -5,59 +5,58 @@ using System.Text.RegularExpressions;
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
-namespace Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator
+namespace Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
+
+/// <summary>
+/// Property Key Generator
+/// </summary>
+/// <seealso cref="Serilog.Sinks.AzureTableStorage.KeyGenerator.DefaultKeyGenerator" />
+public class PropertiesKeyGenerator : DefaultKeyGenerator
 {
+    // Valid RowKey name characters
+    private static readonly Regex _rowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|[\x00-\x1f]|[\x7f-\x9f])");
+
     /// <summary>
-    /// Property Key Generator
+    /// Generate a valid string for a table property key by removing invalid characters
     /// </summary>
-    /// <seealso cref="Serilog.Sinks.AzureTableStorage.KeyGenerator.DefaultKeyGenerator" />
-    public class PropertiesKeyGenerator : DefaultKeyGenerator
+    /// <param name="s">
+    /// The input string
+    /// </param>
+    /// <returns>
+    /// The string that can be used as a property
+    /// </returns>
+    public static string GetValidStringForTableKey(string s)
     {
-        // Valid RowKey name characters
-        private static readonly Regex _rowKeyNotAllowedMatch = new Regex(@"(\\|/|#|\?|[\x00-\x1f]|[\x7f-\x9f])");
+        return _rowKeyNotAllowedMatch.Replace(s, "");
+    }
 
-        /// <summary>
-        /// Generate a valid string for a table property key by removing invalid characters
-        /// </summary>
-        /// <param name="s">
-        /// The input string
-        /// </param>
-        /// <returns>
-        /// The string that can be used as a property
-        /// </returns>
-        public static string GetValidStringForTableKey(string s)
+    /// <summary>
+    /// Automatically generates the RowKey using the following template: {Level|MessageTemplate|IncrementedRowId}
+    /// </summary>
+    /// <param name="logEvent">the log event</param>
+    /// <param name="suffix">suffix for the RowKey</param>
+    /// <returns>The generated RowKey</returns>
+    public override string GenerateRowKey(LogEvent logEvent, string suffix = null)
+    {
+        var prefixBuilder = new StringBuilder(512);
+
+        // Join level and message template
+        prefixBuilder.Append(logEvent.Level).Append('|').Append(GetValidStringForTableKey(logEvent.MessageTemplate.Text));
+
+        var postfixBuilder = new StringBuilder(512);
+
+        if (suffix != null)
+            postfixBuilder.Append('|').Append(GetValidStringForTableKey(suffix));
+
+        // Append GUID to postfix
+        postfixBuilder.Append('|').Append(Guid.NewGuid());
+
+        // Truncate prefix if too long
+        var maxPrefixLength = 1024 - postfixBuilder.Length;
+        if (prefixBuilder.Length > maxPrefixLength)
         {
-            return _rowKeyNotAllowedMatch.Replace(s, "");
+            prefixBuilder.Length = maxPrefixLength;
         }
-
-        /// <summary>
-        /// Automatically generates the RowKey using the following template: {Level|MessageTemplate|IncrementedRowId}
-        /// </summary>
-        /// <param name="logEvent">the log event</param>
-        /// <param name="suffix">suffix for the RowKey</param>
-        /// <returns>The generated RowKey</returns>
-        public override string GenerateRowKey(LogEvent logEvent, string suffix = null)
-        {
-            var prefixBuilder = new StringBuilder(512);
-
-            // Join level and message template
-            prefixBuilder.Append(logEvent.Level).Append('|').Append(GetValidStringForTableKey(logEvent.MessageTemplate.Text));
-
-            var postfixBuilder = new StringBuilder(512);
-
-            if (suffix != null)
-                postfixBuilder.Append('|').Append(GetValidStringForTableKey(suffix));
-
-            // Append GUID to postfix
-            postfixBuilder.Append('|').Append(Guid.NewGuid());
-
-            // Truncate prefix if too long
-            var maxPrefixLength = 1024 - postfixBuilder.Length;
-            if (prefixBuilder.Length > maxPrefixLength)
-            {
-                prefixBuilder.Length = maxPrefixLength;
-            }
-            return prefixBuilder.Append(postfixBuilder).ToString();
-        }
+        return prefixBuilder.Append(postfixBuilder).ToString();
     }
 }

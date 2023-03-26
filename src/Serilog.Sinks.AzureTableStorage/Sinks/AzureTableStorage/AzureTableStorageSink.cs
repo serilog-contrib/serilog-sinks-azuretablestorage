@@ -23,68 +23,67 @@ using Serilog.Formatting;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 
-namespace Serilog.Sinks.AzureTableStorage
+namespace Serilog.Sinks.AzureTableStorage;
+
+/// <summary>
+/// Writes log events as records to an Azure Table Storage table.
+/// </summary>
+public class AzureTableStorageSink : ILogEventSink
 {
+    readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
+    readonly ITextFormatter _textFormatter;
+    readonly IKeyGenerator _keyGenerator;
+    readonly TableServiceClient _storageAccount;
+    readonly string _storageTableName;
+    readonly bool _bypassTableCreationValidation;
+    readonly ICloudTableProvider _cloudTableProvider;
+
     /// <summary>
-    /// Writes log events as records to an Azure Table Storage table.
+    /// Construct a sink that saves logs to the specified storage account.
     /// </summary>
-    public class AzureTableStorageSink : ILogEventSink
+    /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
+    /// <param name="textFormatter"></param>
+    /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
+    /// <param name="keyGenerator">generator used to generate partition keys and row keys</param>
+    /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
+    /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
+    public AzureTableStorageSink(
+        TableServiceClient storageAccount,
+        ITextFormatter textFormatter,
+        string storageTableName = null,
+        IKeyGenerator keyGenerator = null,
+        bool bypassTableCreationValidation = false,
+        ICloudTableProvider cloudTableProvider = null)
     {
-        readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-        readonly ITextFormatter _textFormatter;
-        readonly IKeyGenerator _keyGenerator;
-        readonly TableServiceClient _storageAccount;
-        readonly string _storageTableName;
-        readonly bool _bypassTableCreationValidation;
-        readonly ICloudTableProvider _cloudTableProvider;
+        _textFormatter = textFormatter;
+        _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
 
-        /// <summary>
-        /// Construct a sink that saves logs to the specified storage account.
-        /// </summary>
-        /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
-        /// <param name="textFormatter"></param>
-        /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-        /// <param name="keyGenerator">generator used to generate partition keys and row keys</param>
-        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
-        /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
-        public AzureTableStorageSink(
-            TableServiceClient storageAccount,
-            ITextFormatter textFormatter,
-            string storageTableName = null,
-            IKeyGenerator keyGenerator = null,
-            bool bypassTableCreationValidation = false,
-            ICloudTableProvider cloudTableProvider = null)
+        if (string.IsNullOrEmpty(storageTableName))
         {
-            _textFormatter = textFormatter;
-            _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
-
-            if (string.IsNullOrEmpty(storageTableName))
-            {
-                storageTableName = typeof(LogEventEntity).Name;
-            }
-
-            _storageAccount = storageAccount;
-            _storageTableName = storageTableName;
-            _bypassTableCreationValidation = bypassTableCreationValidation;
-            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider();
+            storageTableName = typeof(LogEventEntity).Name;
         }
 
-        /// <summary>
-        /// Emit the provided log event to the sink.
-        /// </summary>
-        /// <param name="logEvent">The log event to write.</param>
-        public void Emit(LogEvent logEvent)
-        {
-            var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
-            var logEventEntity = new LogEventEntity(
-                logEvent,
-                _textFormatter,
-                _keyGenerator.GeneratePartitionKey(logEvent),
-                _keyGenerator.GenerateRowKey(logEvent)
-                );
+        _storageAccount = storageAccount;
+        _storageTableName = storageTableName;
+        _bypassTableCreationValidation = bypassTableCreationValidation;
+        _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider();
+    }
 
-            table.UpsertEntityAsync(logEventEntity, TableUpdateMode.Merge).SyncContextSafeWait(_waitTimeoutMilliseconds);
-        }
+    /// <summary>
+    /// Emit the provided log event to the sink.
+    /// </summary>
+    /// <param name="logEvent">The log event to write.</param>
+    public void Emit(LogEvent logEvent)
+    {
+        var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
+        var logEventEntity = new LogEventEntity(
+            logEvent,
+            _textFormatter,
+            _keyGenerator.GeneratePartitionKey(logEvent),
+            _keyGenerator.GenerateRowKey(logEvent)
+            );
+
+        table.UpsertEntityAsync(logEventEntity, TableUpdateMode.Merge).SyncContextSafeWait(_waitTimeoutMilliseconds);
     }
 }
 

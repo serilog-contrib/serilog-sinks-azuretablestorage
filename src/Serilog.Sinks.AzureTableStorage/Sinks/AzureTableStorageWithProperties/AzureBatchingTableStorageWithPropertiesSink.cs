@@ -12,133 +12,134 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+using Azure.Data.Tables;
+
 using Serilog.Events;
 using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
 using Serilog.Sinks.AzureTableStorage.KeyGenerator;
 using Serilog.Sinks.AzureTableStorage.Sinks.KeyGenerator;
 using Serilog.Sinks.PeriodicBatching;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Azure.Data.Tables;
 
-namespace Serilog.Sinks.AzureTableStorage
+namespace Serilog.Sinks.AzureTableStorage;
+
+/// <summary>
+/// Writes log events as records to an Azure Table Storage table.
+/// </summary>
+public class AzureBatchingTableStorageWithPropertiesSink : PeriodicBatchingSink
 {
+    readonly IFormatProvider _formatProvider;
+    readonly string _additionalRowKeyPostfix;
+    readonly string[] _propertyColumns;
+    const int _maxAzureOperationsPerBatch = 100;
+    readonly IKeyGenerator _keyGenerator;
+    readonly TableServiceClient _storageAccount;
+    readonly string _storageTableName;
+    readonly bool _bypassTableCreationValidation;
+    readonly ICloudTableProvider _cloudTableProvider;
+
     /// <summary>
-    /// Writes log events as records to an Azure Table Storage table.
+    /// Construct a sink that saves logs to the specified storage account.
     /// </summary>
-    public class AzureBatchingTableStorageWithPropertiesSink : PeriodicBatchingSink
-    {
-        readonly IFormatProvider _formatProvider;
-        readonly string _additionalRowKeyPostfix;
-        readonly string[] _propertyColumns;
-        const int _maxAzureOperationsPerBatch = 100;
-        readonly IKeyGenerator _keyGenerator;
-        readonly TableServiceClient _storageAccount;
-        readonly string _storageTableName;
-        readonly bool _bypassTableCreationValidation;
-        readonly ICloudTableProvider _cloudTableProvider;
-
-        /// <summary>
-        /// Construct a sink that saves logs to the specified storage account.
-        /// </summary>
-        /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
-        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
-        /// <param name="batchSizeLimit"></param>
-        /// <param name="period"></param>
-        /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-        /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
-        /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
-        /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
-        /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
-        /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
-        /// <returns>Logger configuration, allowing configuration to continue.</returns>
-        public AzureBatchingTableStorageWithPropertiesSink(
-            TableServiceClient storageAccount,
-            IFormatProvider formatProvider,
-            int batchSizeLimit,
-            TimeSpan period,
-            string storageTableName = null,
-            string additionalRowKeyPostfix = null,
-            IKeyGenerator keyGenerator = null,
-            string[] propertyColumns = null,
-            bool bypassTableCreationValidation = false,
-            ICloudTableProvider cloudTableProvider = null)
+    /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
+    /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+    /// <param name="batchSizeLimit"></param>
+    /// <param name="period"></param>
+    /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
+    /// <param name="additionalRowKeyPostfix">Additional postfix string that will be appended to row keys</param>
+    /// <param name="keyGenerator">Generates the PartitionKey and the RowKey</param>
+    /// <param name="propertyColumns">Specific properties to be written to columns. By default, all properties will be written to columns.</param>
+    /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
+    /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
+    /// <returns>Logger configuration, allowing configuration to continue.</returns>
+    public AzureBatchingTableStorageWithPropertiesSink(
+        TableServiceClient storageAccount,
+        IFormatProvider formatProvider,
+        int batchSizeLimit,
+        TimeSpan period,
+        string storageTableName = null,
+        string additionalRowKeyPostfix = null,
+        IKeyGenerator keyGenerator = null,
+        string[] propertyColumns = null,
+        bool bypassTableCreationValidation = false,
+        ICloudTableProvider cloudTableProvider = null)
 #pragma warning disable CS0618 // Type or member is obsolete
-            : base(batchSizeLimit, period)
+        : base(batchSizeLimit, period)
 #pragma warning restore CS0618 // Type or member is obsolete
+    {
+        if (string.IsNullOrEmpty(storageTableName))
         {
-            if (string.IsNullOrEmpty(storageTableName))
-            {
-                storageTableName = "LogEventEntity";
-            }
-
-            _storageAccount = storageAccount;
-            _storageTableName = storageTableName;
-            _bypassTableCreationValidation = bypassTableCreationValidation;
-            _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider();
-
-            _formatProvider = formatProvider;
-            _additionalRowKeyPostfix = additionalRowKeyPostfix;
-            _propertyColumns = propertyColumns;
-            _keyGenerator = keyGenerator ?? new PropertiesKeyGenerator();
+            storageTableName = "LogEventEntity";
         }
 
-        /// <summary>
-        /// Emit a batch of log events, running asynchronously.
-        /// </summary>
-        /// <param name="events">The events to emit.</param>
-        /// <remarks>
-        /// Override either <see cref="M:Serilog.Sinks.PeriodicBatching.PeriodicBatchingSink.EmitBatchAsync(System.Collections.Generic.IEnumerable{Serilog.Events.LogEvent})" /> or <see cref="M:Serilog.Sinks.PeriodicBatching.PeriodicBatchingSink.EmitBatch(System.Collections.Generic.IEnumerable{Serilog.Events.LogEvent})" />,
-        /// not both.
-        /// </remarks>
-        protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
+        _storageAccount = storageAccount;
+        _storageTableName = storageTableName;
+        _bypassTableCreationValidation = bypassTableCreationValidation;
+        _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider();
+
+        _formatProvider = formatProvider;
+        _additionalRowKeyPostfix = additionalRowKeyPostfix;
+        _propertyColumns = propertyColumns;
+        _keyGenerator = keyGenerator ?? new PropertiesKeyGenerator();
+    }
+
+    /// <summary>
+    /// Emit a batch of log events, running asynchronously.
+    /// </summary>
+    /// <param name="events">The events to emit.</param>
+    /// <remarks>
+    /// Override either <see cref="M:Serilog.Sinks.PeriodicBatching.PeriodicBatchingSink.EmitBatchAsync(System.Collections.Generic.IEnumerable{Serilog.Events.LogEvent})" /> or <see cref="M:Serilog.Sinks.PeriodicBatching.PeriodicBatchingSink.EmitBatch(System.Collections.Generic.IEnumerable{Serilog.Events.LogEvent})" />,
+    /// not both.
+    /// </remarks>
+    protected override async Task EmitBatchAsync(IEnumerable<LogEvent> events)
+    {
+        var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
+        string lastPartitionKey = null;
+        var transactionActions = new List<TableTransactionAction>();
+        var insertsPerOperation = 0;
+
+        foreach (var logEvent in events)
         {
-            var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
-            string lastPartitionKey = null;
-            var transactionActions = new List<TableTransactionAction>();
-            var insertsPerOperation = 0;
+            var tableEntity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator, _propertyColumns);
 
-            foreach (var logEvent in events)
+            // If partition changed, store the new and force an execution
+            if (lastPartitionKey != tableEntity.PartitionKey)
             {
-                var tableEntity = AzureTableStorageEntityFactory.CreateEntityWithProperties(logEvent, _formatProvider, _additionalRowKeyPostfix, _keyGenerator, _propertyColumns);
+                lastPartitionKey = tableEntity.PartitionKey;
 
-                // If partition changed, store the new and force an execution
-                if (lastPartitionKey != tableEntity.PartitionKey)
-                {
-                    lastPartitionKey = tableEntity.PartitionKey;
-
-                    // Force a new execution
-                    insertsPerOperation = _maxAzureOperationsPerBatch;
-                }
-
-                // If reached max operations per batch, we need a new batch operation
-                if (insertsPerOperation == _maxAzureOperationsPerBatch)
-                {
-                    // If there is an operation currently in use, execute it
-                    if (transactionActions.Count > 0)
-                    {
-                        await table.SubmitTransactionAsync(transactionActions).ConfigureAwait(false);
-                    }
-
-                    // Create a new batch operation and zero count
-                    transactionActions = new List<TableTransactionAction>();
-                    insertsPerOperation = 0;
-                }
-
-                // Add current entry to the batch
-                var transactionAction =
-                    new TableTransactionAction(TableTransactionActionType.UpdateMerge, tableEntity);
-                transactionActions.Add(transactionAction);
-
-                insertsPerOperation++;
+                // Force a new execution
+                insertsPerOperation = _maxAzureOperationsPerBatch;
             }
 
-            // Execute last batch
-            if (transactionActions.Count > 0)
+            // If reached max operations per batch, we need a new batch operation
+            if (insertsPerOperation == _maxAzureOperationsPerBatch)
             {
-                await table.SubmitTransactionAsync(transactionActions).ConfigureAwait(false);
+                // If there is an operation currently in use, execute it
+                if (transactionActions.Count > 0)
+                {
+                    await table.SubmitTransactionAsync(transactionActions).ConfigureAwait(false);
+                }
+
+                // Create a new batch operation and zero count
+                transactionActions = new List<TableTransactionAction>();
+                insertsPerOperation = 0;
             }
+
+            // Add current entry to the batch
+            var transactionAction =
+                new TableTransactionAction(TableTransactionActionType.UpdateMerge, tableEntity);
+            transactionActions.Add(transactionAction);
+
+            insertsPerOperation++;
+        }
+
+        // Execute last batch
+        if (transactionActions.Count > 0)
+        {
+            await table.SubmitTransactionAsync(transactionActions).ConfigureAwait(false);
         }
     }
 }
