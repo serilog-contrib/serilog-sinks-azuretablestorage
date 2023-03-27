@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Serilog.Sinks.AzureTableStorage.Tests
 {
-    public class AzureTableStorageWithPropertiesSinkTests
+    public class AzureTableStorageSinkTests
     {
         private const string DevelopmentStorageAccountConnectionString = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;";
         private const string DevelopmentStorageAccountTableEndpoint = "http://127.0.0.1:10002/devstoreaccount1/LogEventEntity";
@@ -32,12 +32,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public async Task WhenALoggerWritesToTheSinkItIsRetrievableFromTheTableWithProperties()
         {
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .WriteTo.AzureTableStorage(
+                    storageAccount: storageAccount,
+                    storageTableName: table.Name,
+                    writeInBatches: false)
                 .CreateLogger();
 
             var exception = new ArgumentException("Some exception");
@@ -65,12 +68,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         {
             // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .WriteTo.AzureTableStorage(
+                    storageAccount: storageAccount,
+                    storageTableName: table.Name,
+                    writeInBatches: false)
                 .CreateLogger();
 
             const string messageTemplate = "Line 1\r\nLine2";
@@ -87,12 +93,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         {
             // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .WriteTo.AzureTableStorage(
+                    storageAccount: storageAccount,
+                    storageTableName: table.Name,
+                    writeInBatches: false)
                 .CreateLogger();
 
             const string messageTemplate = "Line 1\nLine2";
@@ -109,12 +118,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         {
             // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .WriteTo.AzureTableStorage(
+                    storageAccount: storageAccount,
+                    storageTableName: table.Name,
+                    writeInBatches: false)
                 .CreateLogger();
 
             const string messageTemplate = "Line 1\rLine2";
@@ -130,12 +142,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public async Task WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForScalar()
         {
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .WriteTo.AzureTableStorage(
+                    storageAccount: storageAccount,
+                    storageTableName: table.Name,
+                    writeInBatches: false)
                 .CreateLogger();
 
             var bytearrayValue = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 250, 251, 252, 253, 254, 255 };
@@ -176,12 +191,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public async Task WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForDictionary()
         {
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .WriteTo.AzureTableStorage(
+                    storageAccount: storageAccount,
+                    storageTableName: table.Name,
+                    writeInBatches: false)
                 .CreateLogger();
 
             var dict1 = new Dictionary<string, string>{
@@ -211,12 +229,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public async Task WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForSequence()
         {
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .WriteTo.AzureTableStorage(
+                    storageAccount: storageAccount,
+                    storageTableName: table.Name,
+                    writeInBatches: false)
                 .CreateLogger();
 
             var seq1 = new int[] { 1, 2, 3, 4, 5 };
@@ -251,12 +272,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public async Task WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForStructure()
         {
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .WriteTo.AzureTableStorage(
+                    storageAccount: storageAccount,
+                    storageTableName: table.Name,
+                    writeInBatches: false)
                 .CreateLogger();
 
             var struct1 = new Struct1
@@ -291,12 +315,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public async Task WhenALoggerWritesToTheSinkItAllowsStringFormatNumericPropertyNames()
         {
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .WriteTo.AzureTableStorage(
+                    storageAccount: storageAccount,
+                    storageTableName: table.Name,
+                    writeInBatches: false)
                 .CreateLogger();
 
             var expectedResult = "Hello \"world\"";
@@ -311,12 +338,15 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public async Task WhenALoggerWritesToTheSinkItAllowsNamedAndNumericPropertyNames()
         {
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(storageAccount)
+                .WriteTo.AzureTableStorage(
+                    storageAccount: storageAccount,
+                    storageTableName: table.Name,
+                    writeInBatches: false)
                 .CreateLogger();
 
             var name = "John Smith";
@@ -334,21 +364,29 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public async Task WhenABatchLoggerWritesToTheSinkItStoresAllTheEntries()
         {
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
-            using (var sink = new AzureBatchingTableStorageWithPropertiesSink(storageAccount, null, 1000, TimeSpan.FromMinutes(1)))
+            var options = new AzureTableStorageSinkOptions
             {
-                var timestamp = new DateTimeOffset(2014, 12, 01, 18, 42, 20, 666, TimeSpan.FromHours(2));
-                var messageTemplate = "Some text";
-                var template = new MessageTemplateParser().Parse(messageTemplate);
-                var properties = new List<LogEventProperty>();
-                for (int i = 0; i < 10; ++i)
-                {
-                    sink.Emit(new LogEvent(timestamp, LogEventLevel.Information, null, template, properties));
-                }
+                StorageTableName = table.Name
+            };
+
+            var sink = new AzureTableStorageSink(options, storageAccount);
+            var timestamp = new DateTimeOffset(2014, 12, 01, 18, 42, 20, 666, TimeSpan.FromHours(2));
+            var messageTemplate = "Some text";
+            var template = new MessageTemplateParser().Parse(messageTemplate);
+            var properties = new List<LogEventProperty>();
+            var events = new List<LogEvent>();
+
+            for (int i = 0; i < 10; ++i)
+            {
+                var time = timestamp.AddMilliseconds(i);
+                events.Add(new LogEvent(time, LogEventLevel.Information, null, template, properties));
             }
+
+            await sink.EmitBatchAsync(events);
 
             var result = await TableQueryTakeDynamicAsync(table, takeCount: 11);
             Assert.Equal(10, result.Count);
@@ -358,49 +396,64 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public async Task WhenABatchLoggerWritesToTheSinkItStoresAllTheEntriesInDifferentPartitions()
         {
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
-            using (var sink = new AzureBatchingTableStorageWithPropertiesSink(storageAccount, null, 1000, TimeSpan.FromMinutes(1)))
+            var options = new AzureTableStorageSinkOptions
             {
-                var messageTemplate = "Some text";
-                var template = new MessageTemplateParser().Parse(messageTemplate);
-                var properties = new List<LogEventProperty>();
+                StorageTableName = table.Name
+            };
 
-                for (int k = 0; k < 4; ++k)
+            var sink = new AzureTableStorageSink(options, storageAccount);
+            var messageTemplate = "Some text";
+            var template = new MessageTemplateParser().Parse(messageTemplate);
+            var properties = new List<LogEventProperty>();
+            var events = new List<LogEvent>();
+
+            for (int k = 0; k < 20; ++k)
+            {
+                var timestamp = new DateTimeOffset(2014, 12, 01, 1 + k, 42, 20, 666, TimeSpan.FromHours(2));
+                for (int i = 0; i < 50; ++i)
                 {
-                    var timestamp = new DateTimeOffset(2014, 12, 01, 1 + k, 42, 20, 666, TimeSpan.FromHours(2));
-                    for (int i = 0; i < 2; ++i)
-                    {
-                        sink.Emit(new LogEvent(timestamp, LogEventLevel.Information, null, template, properties));
-                    }
+                    var time = timestamp.AddMilliseconds(i);
+                    events.Add(new LogEvent(time, LogEventLevel.Information, null, template, properties));
                 }
             }
 
-            var result = await TableQueryTakeDynamicAsync(table, takeCount: 9);
-            Assert.Equal(8, result.Count);
+            await sink.EmitBatchAsync(events);
+
+            var result = await TableQueryTakeDynamicAsync(table, takeCount: events.Count + 1);
+            Assert.Equal(events.Count, result.Count);
         }
 
         [Fact]
         public async Task WhenABatchLoggerWritesToTheSinkItStoresAllTheEntriesInLargeNumber()
         {
             var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
 
-            using (var sink = new AzureBatchingTableStorageWithPropertiesSink(storageAccount, null, 1000, TimeSpan.FromMinutes(1)))
+            var options = new AzureTableStorageSinkOptions
             {
-                var timestamp = new DateTimeOffset(2014, 12, 01, 18, 42, 20, 666, TimeSpan.FromHours(2));
-                var messageTemplate = "Some text";
-                var template = new MessageTemplateParser().Parse(messageTemplate);
-                var properties = new List<LogEventProperty>();
-                for (int i = 0; i < 300; ++i)
-                {
-                    sink.Emit(new LogEvent(timestamp, LogEventLevel.Information, null, template, properties));
-                }
+                StorageTableName = table.Name
+            };
+
+            var sink = new AzureTableStorageSink(options, storageAccount);
+            var timestamp = new DateTimeOffset(2014, 12, 01, 18, 42, 20, 666, TimeSpan.FromHours(2));
+            var messageTemplate = "Some text";
+            var template = new MessageTemplateParser().Parse(messageTemplate);
+            var properties = new List<LogEventProperty>();
+            var events = new List<LogEvent>();
+
+            for (int i = 0; i < 300; ++i)
+            {
+                var time = timestamp.AddMilliseconds(i);
+                events.Add(new LogEvent(time, LogEventLevel.Information, null, template, properties));
             }
+
+            await sink.EmitBatchAsync(events);
 
             var result = await TableQueryTakeDynamicAsync(table, takeCount: 301);
             Assert.Equal(300, result.Count);
@@ -422,7 +475,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public void WhenALoggerWithPropertiesUsesAnUnreachableStorageServiceItDoesntFail()
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties("DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=/////////////////////////////////////////////////////////////////////////////////////w==;BlobEndpoint=http://127.0.0.1:16660/devstoreaccount1;TableEndpoint=http://127.0.0.1:16662/devstoreaccount1;QueueEndpoint=http://127.0.0.1:16661/devstoreaccount1;")
+                .WriteTo.AzureTableStorage("DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=/////////////////////////////////////////////////////////////////////////////////////w==;BlobEndpoint=http://127.0.0.1:16660/devstoreaccount1;TableEndpoint=http://127.0.0.1:16662/devstoreaccount1;QueueEndpoint=http://127.0.0.1:16661/devstoreaccount1;")
                 .CreateLogger();
 
             Log.Information("This should silently work, even though the connection string points to invalid endpoints");
@@ -446,7 +499,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
         public void WhenALoggerWithPropertiesUsesAnInvalidStorageConnectionStringItDoesntFail()
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties("InvalidConnectionString!!!")
+                .WriteTo.AzureTableStorage("InvalidConnectionString!!!")
                 .CreateLogger();
 
             Log.Information("This should silently work, even though the connection string is malformed");
@@ -470,7 +523,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             string connectionString = DevelopmentStorageAccountConnectionString;
             string tableEndpoint = DevelopmentStorageAccountTableEndpoint;
             var storageAccount = new TableServiceClient(connectionString);
-            var table = storageAccount.GetTableClient("LogEventEntity");
+            var table = storageAccount.GetTableClient("LogUnitTest");
 
             await table.DeleteAsync();
             await table.CreateIfNotExistsAsync();
@@ -478,7 +531,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var sharedAccessSignature = GetAccountSharedAccessSignature(storageAccount);
 
             var logger = new LoggerConfiguration()
-                .WriteTo.AzureTableStorageWithProperties(
+                .WriteTo.AzureTableStorage(
                     sharedAccessSignature,
                     "test",
                     new Uri(tableEndpoint))

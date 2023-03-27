@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Description>Serilog event sink that writes to Azure Table Storage over HTTP.</Description>
-    <VersionPrefix>7.0.0</VersionPrefix>
+    <VersionPrefix>8.0.0</VersionPrefix>
     <Authors>serilog-contrib</Authors>
     <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
     <AssemblyName>Serilog.Sinks.AzureTableStorage</AssemblyName>
@@ -20,7 +20,7 @@
     <RootNamespace>Serilog</RootNamespace>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Copyright>Copyright © Serilog Contributors 2022</Copyright>
+    <Copyright>Copyright © Serilog Contributors 2023</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

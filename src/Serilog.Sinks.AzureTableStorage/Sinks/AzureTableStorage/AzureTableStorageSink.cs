@@ -13,77 +13,124 @@
 // limitations under the License.
 
 using System;
-using System.Threading;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 using Azure.Data.Tables;
 
 using Serilog.Core;
 using Serilog.Events;
-using Serilog.Formatting;
-using Serilog.Sinks.AzureTableStorage.AzureTableProvider;
-using Serilog.Sinks.AzureTableStorage.KeyGenerator;
+using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog.Sinks.AzureTableStorage;
 
 /// <summary>
 /// Writes log events as records to an Azure Table Storage table.
 /// </summary>
-public class AzureTableStorageSink : ILogEventSink
+public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
 {
-    readonly int _waitTimeoutMilliseconds = Timeout.Infinite;
-    readonly ITextFormatter _textFormatter;
-    readonly IKeyGenerator _keyGenerator;
-    readonly TableServiceClient _storageAccount;
-    readonly string _storageTableName;
-    readonly bool _bypassTableCreationValidation;
-    readonly ICloudTableProvider _cloudTableProvider;
+    private readonly TableServiceClient _tableServiceClient;
+    private readonly AzureTableStorageSinkOptions _options;
+    private readonly IDocumentFactory _documentFactory;
+    private readonly Lazy<TableClient> _tableClient;
 
     /// <summary>
-    /// Construct a sink that saves logs to the specified storage account.
+    /// Initializes a new instance of the <see cref="AzureTableStorageSink" /> class.
     /// </summary>
-    /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
-    /// <param name="textFormatter"></param>
-    /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="keyGenerator">generator used to generate partition keys and row keys</param>
-    /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
-    /// <param name="cloudTableProvider">Cloud table provider to get current log table.</param>
-    public AzureTableStorageSink(
-        TableServiceClient storageAccount,
-        ITextFormatter textFormatter,
-        string storageTableName = null,
-        IKeyGenerator keyGenerator = null,
-        bool bypassTableCreationValidation = false,
-        ICloudTableProvider cloudTableProvider = null)
+    /// <param name="options">The options.</param>
+    /// <param name="tableServiceClient">The table service client.</param>
+    public AzureTableStorageSink(AzureTableStorageSinkOptions options, TableServiceClient tableServiceClient)
+        : this(options, tableServiceClient, null)
     {
-        _textFormatter = textFormatter;
-        _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
+    }
 
-        if (string.IsNullOrEmpty(storageTableName))
-        {
-            storageTableName = typeof(LogEventEntity).Name;
-        }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AzureTableStorageSink" /> class.
+    /// </summary>
+    /// <param name="options">The options.</param>
+    /// <param name="tableServiceClient">The table service client.</param>
+    /// <param name="documentFactory">The document factory.</param>
+    /// <exception cref="System.ArgumentNullException">options</exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="options" /> is null</exception>
+    public AzureTableStorageSink(AzureTableStorageSinkOptions options, TableServiceClient tableServiceClient, IDocumentFactory documentFactory)
+    {
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _tableServiceClient = tableServiceClient ?? throw new ArgumentNullException(nameof(tableServiceClient));
+        _documentFactory = documentFactory ?? new DefaultDocumentFactory(options);
 
-        _storageAccount = storageAccount;
-        _storageTableName = storageTableName;
-        _bypassTableCreationValidation = bypassTableCreationValidation;
-        _cloudTableProvider = cloudTableProvider ?? new DefaultCloudTableProvider();
+        _tableClient = new Lazy<TableClient>(CreateTableClient);
     }
 
     /// <summary>
     /// Emit the provided log event to the sink.
     /// </summary>
     /// <param name="logEvent">The log event to write.</param>
+    /// <exception cref="System.NotImplementedException"></exception>
     public void Emit(LogEvent logEvent)
     {
-        var table = _cloudTableProvider.GetCloudTable(_storageAccount, _storageTableName, _bypassTableCreationValidation);
-        var logEventEntity = new LogEventEntity(
-            logEvent,
-            _textFormatter,
-            _keyGenerator.GeneratePartitionKey(logEvent),
-            _keyGenerator.GenerateRowKey(logEvent)
-            );
+        var document = _documentFactory.Create(logEvent);
+        var tableClient = _tableClient.Value;
 
-        table.UpsertEntityAsync(logEventEntity, TableUpdateMode.Merge).SyncContextSafeWait(_waitTimeoutMilliseconds);
+        tableClient.AddEntity(document);
+    }
+
+    /// <summary>
+    /// Emit a batch of log events, running asynchronously.
+    /// </summary>
+    /// <param name="batch">The batch of events to emit.</param>
+    /// <returns></returns>
+    public async Task EmitBatchAsync(IEnumerable<LogEvent> batch)
+    {
+        // write documents in batches by partition key
+        var documentGroups = batch
+            .Select(_documentFactory.Create)
+            .GroupBy(p => p.PartitionKey);
+
+        var tableClient = _tableClient.Value;
+
+        foreach (var documentGroup in documentGroups)
+        {
+            // create table transactions
+            var transactionActions = documentGroup
+                .Select(tableEntity => new TableTransactionAction(TableTransactionActionType.Add, tableEntity))
+                .ToList();
+
+            // can only send 100 transactions at a time
+            foreach (var transactionBatch in transactionActions.Chunk(100))
+                await tableClient.SubmitTransactionAsync(transactionBatch);
+        }
+    }
+
+    /// <summary>
+    /// Allows sinks to perform periodic work without requiring additional threads
+    /// or timers (thus avoiding additional flush/shut-down complexity).
+    /// </summary>
+    /// <returns></returns>
+    public Task OnEmptyBatchAsync()
+    {
+        return Task.CompletedTask;
+    }
+
+    private TableClient CreateTableClient()
+    {
+        var tableName = _options.StorageTableName ?? "LogEvent";
+        var tableClient = _tableServiceClient.GetTableClient(tableName);
+
+        try
+        {
+            tableClient.CreateIfNotExists();
+        }
+        catch (Exception ex)
+        {
+            Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
+            if (_options.BypassTableCreationValidation)
+                return tableClient;
+
+            throw;
+        }
+
+        return tableClient;
     }
 }
 
