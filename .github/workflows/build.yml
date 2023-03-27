@@ -60,20 +60,20 @@ jobs:
           name: artifacts
           path: '${{github.workspace}}/artifacts'
 
-      - name: Publish Build Packages
+      - name: Publish GitHub Packages
         if: success() && github.event_name != 'pull_request'
         run: dotnet nuget push ./artifacts/*.nupkg --source https://nuget.pkg.github.com/serilog-contrib/index.json --api-key ${GITHUB_TOKEN} --skip-duplicate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Release
-        if: success() && startsWith(github.ref, 'refs/heads/master')
-        run: 'gh release create "${{env.BUILD_VERSION}}" ./artifacts/*.nupkg --title "v${{env.BUILD_VERSION}}"'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish Release Packages
-        if: success() && startsWith(github.ref, 'refs/heads/master')
+      - name: Publish NuGet Packages
+        if: success() && github.event_name != 'pull_request'
         run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY} --skip-duplicate
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+      - name: Create Release
+        if: success() && github.event_name != 'pull_request' && startsWith(github.ref, 'refs/heads/master')
+        run: 'gh release create "${{env.BUILD_VERSION}}" ./artifacts/*.nupkg --title "v${{env.BUILD_VERSION}}"'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
