@@ -24,7 +24,7 @@ public class DefaultKeyGenerator : IKeyGenerator
     }
 
     /// <summary>
-    /// Automatically generates the RowKey using the timestamp
+    /// Automatically generates the RowKey using the timestamp 
     /// </summary>
     /// <param name="logEvent">the log event</param>
     /// <returns>The generated RowKey</returns>
@@ -32,8 +32,8 @@ public class DefaultKeyGenerator : IKeyGenerator
     {
         var utcEventTime = logEvent.Timestamp.UtcDateTime;
 
-        // use time based object id to create key
-        return ObjectId.GenerateNewId(utcEventTime).ToString();
+        // create a 19 character String for reverse chronological ordering.
+        return $"{DateTime.MaxValue.Ticks - utcEventTime.Ticks:D19}";
     }
 
 
