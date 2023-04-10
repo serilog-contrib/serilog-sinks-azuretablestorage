@@ -17,10 +17,15 @@ public class DefaultKeyGenerator : IKeyGenerator
     /// <remarks>The partition key based on the Timestamp rounded to the nearest 5 min</remarks>
     public virtual string GeneratePartitionKey(LogEvent logEvent)
     {
+        // log entries are partitioned in 5 minute blocks.
+        // batch insert is used to get around time based partition key performance issues
+        // values are created in reverse chronological order so newest are always first
+
         var utcEventTime = logEvent.Timestamp.UtcDateTime;
         var roundedEvent = Round(utcEventTime, TimeSpan.FromMinutes(5));
 
-        return $"0{roundedEvent.Ticks}";
+        // create a 19 character String for reverse chronological ordering.
+        return $"{DateTime.MaxValue.Ticks - roundedEvent.Ticks:D19}";
     }
 
     /// <summary>
@@ -30,6 +35,8 @@ public class DefaultKeyGenerator : IKeyGenerator
     /// <returns>The generated RowKey</returns>
     public virtual string GenerateRowKey(LogEvent logEvent)
     {
+        // row key created in reverse chronological order so newest are always first
+
         var utcEventTime = logEvent.Timestamp.UtcDateTime;
 
         // create a 19 character String for reverse chronological ordering.
