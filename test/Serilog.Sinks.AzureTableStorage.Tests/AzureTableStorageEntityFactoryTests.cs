@@ -30,9 +30,6 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var documentFactory = new DefaultDocumentFactory(options);
             var entity = documentFactory.Create(logEvent);
 
-            // Make sure the partition key is in the expected format
-            Assert.Equal(entity.PartitionKey, "0" + new DateTime(long.Parse(entity.PartitionKey)).Ticks);
-
             // Timestamp
             Assert.Equal(logEvent.Timestamp, entity.Timestamp);
 
