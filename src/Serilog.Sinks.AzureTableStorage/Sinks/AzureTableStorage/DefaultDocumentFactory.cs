@@ -14,8 +14,8 @@ namespace Serilog.Sinks.AzureTableStorage;
 /// </summary>
 public class DefaultDocumentFactory : IDocumentFactory
 {
-    // Azure tables support a maximum of 255 columns.
-    private const int _maxDocumentColumns = 255;
+    // Azure tables support a maximum of 255 columns. Nine consumed by default
+    private const int _maxDocumentColumns = 255 - 9;
 
     private readonly AzureTableStorageSinkOptions _sinkOptions;
 
