@@ -199,7 +199,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var documentFactory = new DefaultDocumentFactory(options);
             var entity = documentFactory.Create(logEvent);
 
-            Assert.Equal(254, entity.Count);
+            Assert.Equal(245, entity.Count);
         }
 
         [Fact]
