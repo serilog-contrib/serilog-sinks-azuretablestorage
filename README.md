@@ -54,3 +54,89 @@ In your application's `App.config` or `Web.config` file, specify the file sink a
 ### Async approach
 It is possible to configure the collector using [Serilog.Sinks.Async](https://github.com/serilog/serilog-sinks-async) to have an async approach.
 
+### Example Configuration for ASP.NET
+
+```c#
+public static class Program
+{
+    private const string OutputTemplate = "{Timestamp:HH:mm:ss.fff} [{Level:u1}] {Message:lj}{NewLine}{Exception}";
+
+    public static async Task<int> Main(string[] args)
+    {
+        // azure home directory
+        var homeDirectory = Environment.GetEnvironmentVariable("HOME") ?? ".";
+        var logDirectory = Path.Combine(homeDirectory, "LogFiles");
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .Enrich.FromLogContext()
+            .WriteTo.Console(outputTemplate: OutputTemplate)
+            .WriteTo.File(
+                path: $"{logDirectory}/boot.txt",
+                rollingInterval: RollingInterval.Day,
+                shared: true,
+                flushToDiskInterval: TimeSpan.FromSeconds(1),
+                outputTemplate: OutputTemplate,
+                retainedFileCountLimit: 10
+            )
+            .CreateBootstrapLogger();
+
+        try
+        {
+            Log.Information("Starting web host");
+
+            var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
+
+            builder.Host
+                .UseSerilog((context, services, configuration) => configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services)
+                    .Enrich.FromLogContext()
+                    .Enrich.WithProperty("ApplicationName", builder.Environment.ApplicationName)
+                    .Enrich.WithProperty("EnvironmentName", builder.Environment.EnvironmentName)
+                    .WriteTo.Console(outputTemplate: OutputTemplate)
+                    .WriteTo.File(
+                        path: $"{logDirectory}/log.txt",
+                        rollingInterval: RollingInterval.Day,
+                        shared: true,
+                        flushToDiskInterval: TimeSpan.FromSeconds(1),
+                        outputTemplate: OutputTemplate,
+                        retainedFileCountLimit: 10
+                    )
+                    .WriteTo.AzureTableStorage(
+                        connectionString: context.Configuration.GetConnectionString("StorageAccount"),
+                        propertyColumns: new[] { "SourceContext", "RequestId", "RequestPath", "ConnectionId", "ApplicationName", "EnvironmentName" }
+                    )
+                );
+
+            ConfigureServices(builder);
+
+            var app = builder.Build();
+
+            ConfigureMiddleware(app);
+
+            await app.RunAsync();
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Host terminated unexpectedly");
+            return 1;
+        }
+        finally
+        {
+            await Log.CloseAndFlushAsync();
+        }
+    }
+
+    private static void ConfigureServices(WebApplicationBuilder builder)
+    {
+    }
+
+    private static void ConfigureMiddleware(Microsoft.AspNetCore.Builder.WebApplication app)
+    {
+    }
+}
+```
