@@ -43,9 +43,11 @@ public class DefaultDocumentFactory : IDocumentFactory
             Timestamp = logEvent.Timestamp
         };
 
+        tableEntity["EventTime"] = logEvent.Timestamp;
         tableEntity["Level"] = logEvent.Level.ToString();
         tableEntity["MessageTemplate"] = logEvent.MessageTemplate.Text;
         tableEntity["RenderedMessage"] = logEvent.RenderMessage(_sinkOptions.FormatProvider);
+
 
         if (logEvent.Exception != null)
             tableEntity["Exception"] = logEvent.Exception.ToString();

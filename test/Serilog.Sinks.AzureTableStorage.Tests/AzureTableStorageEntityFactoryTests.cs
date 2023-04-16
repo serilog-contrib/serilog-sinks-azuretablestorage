@@ -34,7 +34,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             Assert.Equal(logEvent.Timestamp, entity.Timestamp);
 
             // Properties
-            Assert.Equal(7, entity.Count - 3);
+            Assert.Equal(7, entity.Count - 4);
 
             Assert.Equal(messageTemplate, entity["MessageTemplate"] as string);
             Assert.Equal("Information", entity["Level"] as string);
@@ -78,7 +78,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var documentFactory = new DefaultDocumentFactory(options);
             var entity = documentFactory.Create(logEvent);
 
-            Assert.Equal(4 + properties.Count, entity.Count - 3);
+            Assert.Equal(4 + properties.Count, entity.Count - 4);
 
             Assert.IsType<byte[]>(entity["ByteArray"]);
             Assert.Equal(bytearrayValue, entity["ByteArray"]);
@@ -127,7 +127,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var documentFactory = new DefaultDocumentFactory(options);
             var entity = documentFactory.Create(logEvent);
 
-            Assert.Equal(4 + properties.Count, entity.Count - 3);
+            Assert.Equal(4 + properties.Count, entity.Count - 4);
             Assert.Equal("[(\"d1\": [(\"d1k1\": \"d1k1v1\"), (\"d1k2\": \"d1k2v2\"), (\"d1k3\": \"d1k3v3\")]), (\"d2\": [(\"d2k1\": \"d2k1v1\"), (\"d2k2\": \"d2k2v2\"), (\"d2k3\": \"d2k3v3\")]), (\"d0\": 0)]", entity["Dictionary"]);
         }
 
@@ -172,7 +172,7 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var documentFactory = new DefaultDocumentFactory(options);
             var entity = documentFactory.Create(logEvent);
 
-            Assert.Equal(4 + properties.Count, entity.Count - 3);
+            Assert.Equal(4 + properties.Count, entity.Count - 4);
             Assert.Equal("[[1, 2, 3, 4, 5], [\"a\", \"b\", \"c\", \"d\", \"e\"]]", entity["Sequence"]);
         }
 
