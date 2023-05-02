@@ -1,8 +1,8 @@
 name: Build
 
 env:
-  BUILD_VERSION: "8.0.${{github.run_number}}${{github.ref != 'refs/heads/master' && '-beta' || ''}}"
-  BUILD_INFORMATION: "8.0.${{github.run_number}}${{github.ref != 'refs/heads/master' && '-beta' || ''}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
+  BUILD_VERSION: "8.5.${{github.run_number}}${{github.ref != 'refs/heads/master' && '-beta' || ''}}"
+  BUILD_INFORMATION: "8.5.${{github.run_number}}${{github.ref != 'refs/heads/master' && '-beta' || ''}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
 
 on:
   push:

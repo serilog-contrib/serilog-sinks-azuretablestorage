@@ -1,0 +1,228 @@
+@page
+@model SampleWebApplication.Pages.LogsModel
+@{
+    ViewData["Title"] = "Logs";
+}
+
+<form id="log-search-form"
+      name="log-search-form"
+      role="form"
+      method="get">
+
+    <div class="card mb-5">
+        <div class="card-header">
+            <div class="row no-gutters">
+                <div class="col">
+                    <i class="fa-solid fa-file-lines mr-2"></i> Logs
+                </div>
+                <div class="col-sm-2">
+                    <select class="form-select form-select-sm"
+                            name="l"
+                            asp-for="Level"
+                            onchange="this.form.submit()">
+                        <option value="">- Level -</option>
+                        <option value="Trace">Trace</option>
+                        <option value="Debug">Debug</option>
+                        <option value="Information">Information</option>
+                        <option value="Warning">Warning</option>
+                        <option value="Error">Error</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <div class="input-group input-group-sm mr-2">
+                        <div class="input-group-prepend">
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    type="button"
+                                    title="Previous Date"
+                                    onclick="previousDate()">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                        </div>
+                        <input type="date"
+                               name="d"
+                               asp-for="Date"
+                               class="form-control form-control-sm"
+                               placeholder="Date" />
+                        <div class="input-group-append">
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    type="button"
+                                    title="Next Date"
+                                    onclick="nextDate()">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    type="submit">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <table class="table table-bordered table-sm">
+                <colgroup>
+                    <col style="width: 30px" />
+                    <col style="width: 30px" />
+                    <col style="width: 200px" />
+                    <col style="width: 120px" />
+                    <col style="" />
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Level</th>
+                        <th scope="col">Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.Logs)
+                    {
+                        <tr>
+                            <td style="text-align: center;">
+                                <a class="caret-toggle d-block collapsed"
+                                   data-bs-toggle="collapse"
+                                   href="#collapse-@log.RowKey"
+                                   role="button"
+                                   aria-expanded="false"
+                                   aria-controls="collapse-@log.RowKey">
+                                    <i class="fa-solid fa-caret-down text-body"></i>
+                                </a>
+                            </td>
+                            <td style="text-align: center;">
+                                @switch (log.Level)
+                                {
+                                    case "Warning":
+                                        <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+                                        break;
+                                    case "Error":
+                                    case "Critical":
+                                        <i class="fa-solid fa-circle-xmark text-danger"></i>
+                                        break;
+                                    case "Information":
+                                        <i class="fa-solid fa-circle-info text-primary"></i>
+                                        break;
+                                    default:
+                                        <i class="fa-solid fa-circle-info text-secondary"></i>
+                                        break;
+                                }
+                            </td>
+                            <td>@log.Timestamp?.ToString("g")</td>
+                            <td>@log.Level</td>
+                            <td>@log.RenderedMessage</td>
+                        </tr>
+                        <tr class="collapse" id="collapse-@log.RowKey" style="background-color: #f9f9f9;">
+                            <td colspan="5">
+                                <div class="tab-container">
+                                    <ul class="nav nav-tabs" id="log-tabs-@log.RowKey" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link active"
+                                               id="properties-tab-@log.RowKey"
+                                               href="#properties-panel-@log.RowKey"
+                                               data-toggle="tab"
+                                               aria-controls="properties-panel-@log.RowKey"
+                                               aria-selected="true"
+                                               role="tab">Properties</a>
+                                        </li>
+                                        @if (!string.IsNullOrWhiteSpace(log.Exception))
+                                        {
+                                            <li class="nav-item" role="presentation">
+                                                <a class="nav-link"
+                                                   id="exception-tab-@log.RowKey"
+                                                   href="#exception-panel-@log.RowKey"
+                                                   data-toggle="tab"
+                                                   aria-controls="exception-panel-@log.RowKey"
+                                                   role="tab">Exception</a>
+                                            </li>
+                                        }
+                                    </ul>
+                                    <div class="tab-content" id="myTabContent">
+                                        <div class="tab-pane fade show active"
+                                             id="properties-panel-@log.RowKey"
+                                             aria-labelledby="properties-tab-@log.RowKey"
+                                             role="tabpanel">
+                                            <json-display>@log.Data</json-display>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(log.Exception))
+                                        {
+                                            <div class="tab-pane fade"
+                                                 id="exception-panel-@log.RowKey"
+                                                 aria-labelledby="exception-tab-@log.RowKey"
+                                                 role="tabpanel">
+                                                <pre style="overflow: auto; max-height: 400px; font-family: Courier New">@log.Exception</pre>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card-footer p-0">
+
+            <div class="row">
+                <div class="col-md-6"></div>
+                <div class="col-md-6">
+                    <nav aria-label="Log Pagination">
+                        <ul class="justify-content-md-end m-3 pagination">
+                            @if (!string.IsNullOrWhiteSpace(Model.ContinuationToken))
+                            {
+                                <li class="page-item">
+                                    <a class="page-link"
+                                   asp-page="/Logs"
+                                   asp-route-z="@Model.PageSize"
+                                   asp-route-l="@Model.Level"
+                                   asp-route-d="@Model.Date.Date"
+                                   asp-route-t="">First</a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">First</span>
+                                </li>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.NextToken))
+                            {
+                                <li class="page-item">
+                                    <a class="page-link"
+                                   asp-page="/Logs"
+                                   asp-route-z="@Model.PageSize"
+                                   asp-route-l="@Model.Level"
+                                   asp-route-d="@Model.Date.Date"
+                                   asp-route-t="@Model.NextToken">Next</a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">Next</span>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        function previousDate() {
+            $('#@Html.IdFor(p => p.Date)').val('@Model.Date.AddDays(-1).ToString("yyyy-MM-dd")');
+            $('#log-search-form').submit();
+        }
+        function nextDate() {
+            $('#@Html.IdFor(p => p.Date)').val('@Model.Date.AddDays(1).ToString("yyyy-MM-dd")');
+            $('#log-search-form').submit();
+        }
+    </script>
+}

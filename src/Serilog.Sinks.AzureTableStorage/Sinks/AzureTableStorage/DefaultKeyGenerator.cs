@@ -1,6 +1,5 @@
-using System;
-
 using Serilog.Events;
+using Serilog.Sinks.AzureTableStorage.Extensions;
 
 namespace Serilog.Sinks.AzureTableStorage;
 
@@ -9,6 +8,17 @@ namespace Serilog.Sinks.AzureTableStorage;
 /// </summary>
 public class DefaultKeyGenerator : IKeyGenerator
 {
+    private readonly AzureTableStorageSinkOptions _options;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultKeyGenerator"/> class.
+    /// </summary>
+    /// <param name="options">The table storage options.</param>
+    public DefaultKeyGenerator(AzureTableStorageSinkOptions options)
+    {
+        _options = options;
+    }
+
     /// <summary>
     /// Automatically generates the PartitionKey based on the logEvent timestamp
     /// </summary>
@@ -22,10 +32,7 @@ public class DefaultKeyGenerator : IKeyGenerator
         // values are created in reverse chronological order so newest are always first
 
         var utcEventTime = logEvent.Timestamp.UtcDateTime;
-        var roundedEvent = Round(utcEventTime, TimeSpan.FromMinutes(5));
-
-        // create a 19 character String for reverse chronological ordering.
-        return $"{DateTime.MaxValue.Ticks - roundedEvent.Ticks:D19}";
+        return utcEventTime.GeneratePartitionKey(_options.PartitionKeyRounding);
     }
 
     /// <summary>
@@ -38,16 +45,7 @@ public class DefaultKeyGenerator : IKeyGenerator
         // row key created in reverse chronological order so newest are always first
 
         var utcEventTime = logEvent.Timestamp.UtcDateTime;
-
-        // create a 19 character String for reverse chronological ordering.
-        return $"{DateTime.MaxValue.Ticks - utcEventTime.Ticks:D19}";
-    }
-
-
-    private static DateTime Round(DateTime date, TimeSpan span)
-    {
-        long ticks = (date.Ticks + (span.Ticks / 2) + 1) / span.Ticks;
-        return new DateTime(ticks * span.Ticks);
+        return utcEventTime.GenerateRowKey();
     }
 }
 

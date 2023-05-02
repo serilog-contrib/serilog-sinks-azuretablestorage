@@ -61,6 +61,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
     public static LoggerConfiguration AzureTableStorage(
@@ -75,7 +76,8 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         IKeyGenerator keyGenerator = null,
         string[] propertyColumns = null,
         bool bypassTableCreationValidation = false,
-        IDocumentFactory documentFactory = null)
+        IDocumentFactory documentFactory = null,
+        TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
             throw new ArgumentNullException(nameof(loggerConfiguration));
@@ -95,7 +97,8 @@ public static class LoggerConfigurationAzureTableStorageExtensions
             keyGenerator: keyGenerator,
             propertyColumns: propertyColumns,
             bypassTableCreationValidation: bypassTableCreationValidation,
-            documentFactory: documentFactory);
+            documentFactory: documentFactory,
+            partitionKeyRounding: partitionKeyRounding);
     }
 
     /// <summary>
@@ -115,6 +118,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
     public static LoggerConfiguration AzureTableStorage(
@@ -129,7 +133,8 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         IKeyGenerator keyGenerator = null,
         string[] propertyColumns = null,
         bool bypassTableCreationValidation = false,
-        IDocumentFactory documentFactory = null)
+        IDocumentFactory documentFactory = null,
+        TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
             throw new ArgumentNullException(nameof(loggerConfiguration));
@@ -149,7 +154,8 @@ public static class LoggerConfigurationAzureTableStorageExtensions
             keyGenerator: keyGenerator,
             propertyColumns: propertyColumns,
             bypassTableCreationValidation: bypassTableCreationValidation,
-            documentFactory: documentFactory);
+            documentFactory: documentFactory,
+            partitionKeyRounding: partitionKeyRounding);
     }
 
     /// <summary>
@@ -170,6 +176,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
     public static LoggerConfiguration AzureTableStorage(
@@ -185,7 +192,8 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         int? batchPostingLimit = null,
         IKeyGenerator keyGenerator = null,
         string[] propertyColumns = null,
-        IDocumentFactory documentFactory = null)
+        IDocumentFactory documentFactory = null,
+        TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
             throw new ArgumentNullException(nameof(loggerConfiguration));
@@ -208,7 +216,8 @@ public static class LoggerConfigurationAzureTableStorageExtensions
             batchPostingLimit: batchPostingLimit,
             keyGenerator: keyGenerator,
             propertyColumns: propertyColumns,
-            documentFactory: documentFactory);
+            documentFactory: documentFactory,
+            partitionKeyRounding: partitionKeyRounding);
     }
 
     /// <summary>
@@ -228,6 +237,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
     public static LoggerConfiguration AzureTableStorage(
@@ -243,7 +253,8 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         IKeyGenerator keyGenerator = null,
         string[] propertyColumns = null,
         bool bypassTableCreationValidation = false,
-        IDocumentFactory documentFactory = null)
+        IDocumentFactory documentFactory = null,
+        TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
             throw new ArgumentNullException(nameof(loggerConfiguration));
@@ -260,13 +271,15 @@ public static class LoggerConfigurationAzureTableStorageExtensions
                 StorageTableName = storageTableName,
                 Formatter = formatter,
                 FormatProvider = formatProvider,
-                KeyGenerator = keyGenerator ?? new DefaultKeyGenerator(),
                 PropertyColumns = new HashSet<string>(propertyColumns ?? Enumerable.Empty<string>()),
                 BypassTableCreationValidation = bypassTableCreationValidation,
+                PartitionKeyRounding = partitionKeyRounding ?? TimeSpan.FromMinutes(5)
             };
 
-            documentFactory ??= new DefaultDocumentFactory(options);
-            var tableStorageSink = new AzureTableStorageSink(options, storageAccount, documentFactory);
+            keyGenerator ??= new DefaultKeyGenerator(options);
+            documentFactory ??= new DefaultDocumentFactory(options, keyGenerator);
+
+            var tableStorageSink = new AzureTableStorageSink(options, storageAccount, documentFactory, keyGenerator);
 
             if (writeInBatches)
             {
@@ -275,7 +288,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
                 {
                     BatchSizeLimit = batchPostingLimit ?? DefaultBatchSizeLimit,
                     EagerlyEmitFirstEvent = true,
-                    Period = period ?? DefaultPeriod
+                    Period = period ?? DefaultPeriod,
                 };
 
                 sink = new PeriodicBatchingSink(tableStorageSink, batchingOptions);
@@ -312,6 +325,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
     public static LoggerConfiguration AzureTableStorage(
@@ -327,7 +341,8 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         IKeyGenerator keyGenerator = null,
         string[] propertyColumns = null,
         bool bypassTableCreationValidation = false,
-        IDocumentFactory documentFactory = null)
+        IDocumentFactory documentFactory = null,
+        TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
             throw new ArgumentNullException(nameof(loggerConfiguration));
@@ -340,19 +355,20 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         {
             var storageAccount = new TableServiceClient(connectionString);
             return AzureTableStorage(
-                loggerConfiguration,
-                formatter,
-                storageAccount,
-                restrictedToMinimumLevel,
-                formatProvider,
-                storageTableName,
-                writeInBatches,
-                period,
-                batchPostingLimit,
-                keyGenerator,
-                propertyColumns,
-                bypassTableCreationValidation,
-                documentFactory);
+                loggerConfiguration: loggerConfiguration,
+                formatter: formatter,
+                storageAccount: storageAccount,
+                restrictedToMinimumLevel: restrictedToMinimumLevel,
+                formatProvider: formatProvider,
+                storageTableName: storageTableName,
+                writeInBatches: writeInBatches,
+                period: period,
+                batchPostingLimit: batchPostingLimit,
+                keyGenerator: keyGenerator,
+                propertyColumns: propertyColumns,
+                bypassTableCreationValidation: bypassTableCreationValidation,
+                documentFactory: documentFactory,
+                partitionKeyRounding: partitionKeyRounding);
         }
         catch (Exception ex)
         {
@@ -382,6 +398,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
     public static LoggerConfiguration AzureTableStorage(
@@ -398,7 +415,8 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         int? batchPostingLimit = null,
         IKeyGenerator keyGenerator = null,
         string[] propertyColumns = null,
-        IDocumentFactory documentFactory = null)
+        IDocumentFactory documentFactory = null,
+        TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
             throw new ArgumentNullException(nameof(loggerConfiguration));
@@ -422,19 +440,20 @@ public static class LoggerConfigurationAzureTableStorageExtensions
 
             // We set bypassTableCreationValidation to true explicitly here as the the SAS URL might not have enough permissions to query if the table exists.
             return AzureTableStorage(
-                loggerConfiguration,
-                formatter,
-                storageAccount,
-                restrictedToMinimumLevel,
-                formatProvider,
-                storageTableName,
-                writeInBatches,
-                period,
-                batchPostingLimit,
-                keyGenerator,
-                propertyColumns,
-                true,
-                documentFactory);
+                loggerConfiguration: loggerConfiguration,
+                formatter: formatter,
+                storageAccount: storageAccount,
+                restrictedToMinimumLevel: restrictedToMinimumLevel,
+                formatProvider: formatProvider,
+                storageTableName: storageTableName,
+                writeInBatches: writeInBatches,
+                period: period,
+                batchPostingLimit: batchPostingLimit,
+                keyGenerator: keyGenerator,
+                propertyColumns: propertyColumns,
+                bypassTableCreationValidation: true,
+                documentFactory: documentFactory,
+                partitionKeyRounding: partitionKeyRounding);
         }
         catch (Exception ex)
         {
