@@ -37,14 +37,6 @@ public class AzureTableStorageSinkOptions
     public string StorageTableName { get; set; } = "LogEvent";
 
     /// <summary>
-    /// Gets or sets the document key generator.
-    /// </summary>
-    /// <value>
-    /// The document key generator.
-    /// </value>
-    public IKeyGenerator KeyGenerator { get; set; } = new DefaultKeyGenerator();
-
-    /// <summary>
     /// Gets or sets a value indicating whether to bypass table creation validation.
     /// </summary>
     /// <value>
@@ -59,4 +51,12 @@ public class AzureTableStorageSinkOptions
     /// The properties to be written to table columns.
     /// </value>
     public HashSet<string> PropertyColumns { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the partition key rounding time span. Default 5 minutes
+    /// </summary>
+    /// <value>
+    /// The partition key rounding time span.
+    /// </value>
+    public TimeSpan PartitionKeyRounding { get; set; } = TimeSpan.FromMinutes(5);
 }

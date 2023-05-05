@@ -41,7 +41,7 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     /// <param name="options">The options.</param>
     /// <param name="tableServiceClient">The table service client.</param>
     public AzureTableStorageSink(AzureTableStorageSinkOptions options, TableServiceClient tableServiceClient)
-        : this(options, tableServiceClient, null)
+        : this(options, tableServiceClient, null, null)
     {
     }
 
@@ -51,13 +51,17 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     /// <param name="options">The options.</param>
     /// <param name="tableServiceClient">The table service client.</param>
     /// <param name="documentFactory">The document factory.</param>
+    /// <param name="keyGenerator">The key generator.</param>
     /// <exception cref="System.ArgumentNullException">options</exception>
     /// <exception cref="ArgumentNullException">When <paramref name="options" /> is null</exception>
-    public AzureTableStorageSink(AzureTableStorageSinkOptions options, TableServiceClient tableServiceClient, IDocumentFactory documentFactory)
+    public AzureTableStorageSink(AzureTableStorageSinkOptions options, TableServiceClient tableServiceClient, IDocumentFactory documentFactory, IKeyGenerator keyGenerator)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _tableServiceClient = tableServiceClient ?? throw new ArgumentNullException(nameof(tableServiceClient));
-        _documentFactory = documentFactory ?? new DefaultDocumentFactory(options);
+
+        keyGenerator ??= new DefaultKeyGenerator(options);
+
+        _documentFactory = documentFactory ?? new DefaultDocumentFactory(options, keyGenerator);
 
         _tableClient = new Lazy<TableClient>(CreateTableClient);
     }

@@ -1,3 +1,9 @@
+8.5.0
+  * Add option for partition key rounding 
+  * Move IKeyGenertor from options
+  * Add DateTime extension methods for partition key and row key
+  * Add sample web project
+
 8.0.0
   * Breaking: major refactor to simplify code base
     * Removed: AzureTableStorageWithProperties extension removed, use equivalent AzureTableStorage

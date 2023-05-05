@@ -18,14 +18,18 @@ public class DefaultDocumentFactory : IDocumentFactory
     private const int _maxDocumentColumns = 255 - 9;
 
     private readonly AzureTableStorageSinkOptions _sinkOptions;
+    private readonly IKeyGenerator _keyGenerator;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultDocumentFactory"/> class.
+    /// Initializes a new instance of the <see cref="DefaultDocumentFactory" /> class.
     /// </summary>
     /// <param name="sinkOptions">The sink options.</param>
-    public DefaultDocumentFactory(AzureTableStorageSinkOptions sinkOptions)
+    /// <param name="keyGenerator">The key generator.</param>
+    /// <exception cref="System.ArgumentNullException">sinkOptions</exception>
+    public DefaultDocumentFactory(AzureTableStorageSinkOptions sinkOptions, IKeyGenerator keyGenerator = null)
     {
         _sinkOptions = sinkOptions ?? throw new ArgumentNullException(nameof(sinkOptions));
+        _keyGenerator = keyGenerator ?? new DefaultKeyGenerator(sinkOptions);
     }
 
     /// <summary>
@@ -35,11 +39,10 @@ public class DefaultDocumentFactory : IDocumentFactory
     /// <returns>An instance of <see cref="TableEntity"/></returns>
     public virtual TableEntity Create(LogEvent logEvent)
     {
-        var keyGenerator = _sinkOptions.KeyGenerator ?? new DefaultKeyGenerator();
         var tableEntity = new TableEntity
         {
-            PartitionKey = keyGenerator.GeneratePartitionKey(logEvent),
-            RowKey = keyGenerator.GenerateRowKey(logEvent),
+            PartitionKey = _keyGenerator.GeneratePartitionKey(logEvent),
+            RowKey = _keyGenerator.GenerateRowKey(logEvent),
             Timestamp = logEvent.Timestamp
         };
 
