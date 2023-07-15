@@ -276,8 +276,8 @@ public static class LoggerConfigurationAzureTableStorageExtensions
                 PartitionKeyRounding = partitionKeyRounding ?? TimeSpan.FromMinutes(5)
             };
 
-            keyGenerator ??= new DefaultKeyGenerator(options);
-            documentFactory ??= new DefaultDocumentFactory(options, keyGenerator);
+            keyGenerator ??= new DefaultKeyGenerator();
+            documentFactory ??= new DefaultDocumentFactory();
 
             var tableStorageSink = new AzureTableStorageSink(options, storageAccount, documentFactory, keyGenerator);
 

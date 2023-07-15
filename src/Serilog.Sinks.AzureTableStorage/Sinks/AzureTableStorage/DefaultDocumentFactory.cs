@@ -10,46 +10,42 @@ using Serilog.Formatting.Json;
 namespace Serilog.Sinks.AzureTableStorage;
 
 /// <summary>
-/// 
+/// Default Azure Table Storage document factory
 /// </summary>
 public class DefaultDocumentFactory : IDocumentFactory
 {
     // Azure tables support a maximum of 255 columns. Nine consumed by default
     private const int _maxDocumentColumns = 255 - 9;
 
-    private readonly AzureTableStorageSinkOptions _sinkOptions;
-    private readonly IKeyGenerator _keyGenerator;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultDocumentFactory" /> class.
-    /// </summary>
-    /// <param name="sinkOptions">The sink options.</param>
-    /// <param name="keyGenerator">The key generator.</param>
-    /// <exception cref="System.ArgumentNullException">sinkOptions</exception>
-    public DefaultDocumentFactory(AzureTableStorageSinkOptions sinkOptions, IKeyGenerator keyGenerator = null)
-    {
-        _sinkOptions = sinkOptions ?? throw new ArgumentNullException(nameof(sinkOptions));
-        _keyGenerator = keyGenerator ?? new DefaultKeyGenerator(sinkOptions);
-    }
-
     /// <summary>
     /// Creates a <see cref="TableEntity"/> from specified <see cref="LogEvent"/>.
     /// </summary>
     /// <param name="logEvent">The log event.</param>
+    /// <param name="options">The table storage options.</param>
+    /// <param name="keyGenerator">The document key generator.</param>
     /// <returns>An instance of <see cref="TableEntity"/></returns>
-    public virtual TableEntity Create(LogEvent logEvent)
+    public virtual TableEntity Create(LogEvent logEvent, AzureTableStorageSinkOptions options, IKeyGenerator keyGenerator)
     {
+        if (logEvent is null)
+            throw new ArgumentNullException(nameof(logEvent));
+
+        if (options is null)
+            throw new ArgumentNullException(nameof(options));
+
+        if (keyGenerator is null)
+            throw new ArgumentNullException(nameof(keyGenerator));
+
         var tableEntity = new TableEntity
         {
-            PartitionKey = _keyGenerator.GeneratePartitionKey(logEvent),
-            RowKey = _keyGenerator.GenerateRowKey(logEvent),
+            PartitionKey = keyGenerator.GeneratePartitionKey(logEvent, options),
+            RowKey = keyGenerator.GenerateRowKey(logEvent, options),
             Timestamp = logEvent.Timestamp
         };
 
         tableEntity["EventTime"] = logEvent.Timestamp;
         tableEntity["Level"] = logEvent.Level.ToString();
         tableEntity["MessageTemplate"] = logEvent.MessageTemplate.Text;
-        tableEntity["RenderedMessage"] = logEvent.RenderMessage(_sinkOptions.FormatProvider);
+        tableEntity["RenderedMessage"] = logEvent.RenderMessage(options.FormatProvider);
 
 
         if (logEvent.Exception != null)
@@ -57,7 +53,7 @@ public class DefaultDocumentFactory : IDocumentFactory
 
         using var writer = new StringWriter();
 
-        var formatter = _sinkOptions.Formatter ?? new JsonFormatter(closingDelimiter: "");
+        var formatter = options.Formatter ?? new JsonFormatter(closingDelimiter: "");
         formatter.Format(logEvent, writer);
 
         tableEntity["Data"] = writer.ToString();
@@ -67,12 +63,13 @@ public class DefaultDocumentFactory : IDocumentFactory
         foreach (var logProperty in logEvent.Properties)
         {
             var propertyKey = logProperty.Key;
-            var isValid = IsValidColumnName(propertyKey) && ShouldIncludeProperty(propertyKey);
+            var isValid = IsValidColumnName(propertyKey)
+                && ShouldIncludeProperty(propertyKey, options);
 
             if (!isValid || count++ >= _maxDocumentColumns - 1)
                 continue;
 
-            var propertyValue = ConvertValue(logProperty.Value, null, _sinkOptions.FormatProvider);
+            var propertyValue = ConvertValue(logProperty.Value, null, options.FormatProvider);
             tableEntity[propertyKey] = propertyValue;
         }
 
@@ -96,14 +93,15 @@ public class DefaultDocumentFactory : IDocumentFactory
     /// Determines whether the specified property name should be included.
     /// </summary>
     /// <param name="propertyName">Name of the property.</param>
+    /// <param name="options">The table storage options.</param>
     /// <returns>
     ///   <c>true</c> if the property name should be included; otherwise, <c>false</c>.
     /// </returns>
-    protected bool ShouldIncludeProperty(string propertyName)
+    protected bool ShouldIncludeProperty(string propertyName, AzureTableStorageSinkOptions options)
     {
-        return _sinkOptions.PropertyColumns == null
-               || _sinkOptions.PropertyColumns.Count == 0
-               || _sinkOptions.PropertyColumns.Contains(propertyName);
+        return options.PropertyColumns == null
+               || options.PropertyColumns.Count == 0
+               || options.PropertyColumns.Contains(propertyName);
     }
 
     /// <summary>

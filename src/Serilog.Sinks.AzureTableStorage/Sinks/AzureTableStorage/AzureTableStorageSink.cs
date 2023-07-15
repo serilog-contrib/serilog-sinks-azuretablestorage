@@ -33,6 +33,7 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     private readonly TableServiceClient _tableServiceClient;
     private readonly AzureTableStorageSinkOptions _options;
     private readonly IDocumentFactory _documentFactory;
+    private readonly IKeyGenerator _keyGenerator;
     private readonly Lazy<TableClient> _tableClient;
 
     /// <summary>
@@ -59,9 +60,8 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _tableServiceClient = tableServiceClient ?? throw new ArgumentNullException(nameof(tableServiceClient));
 
-        keyGenerator ??= new DefaultKeyGenerator(options);
-
-        _documentFactory = documentFactory ?? new DefaultDocumentFactory(options, keyGenerator);
+        _keyGenerator = keyGenerator ??= new DefaultKeyGenerator();
+        _documentFactory = documentFactory ?? new DefaultDocumentFactory();
 
         _tableClient = new Lazy<TableClient>(CreateTableClient);
     }
@@ -73,7 +73,7 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     /// <exception cref="System.NotImplementedException"></exception>
     public void Emit(LogEvent logEvent)
     {
-        var document = _documentFactory.Create(logEvent);
+        var document = _documentFactory.Create(logEvent, _options, _keyGenerator);
         var tableClient = _tableClient.Value;
 
         tableClient.AddEntity(document);
@@ -88,7 +88,7 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     {
         // write documents in batches by partition key
         var documentGroups = batch
-            .Select(_documentFactory.Create)
+            .Select(logEvent => _documentFactory.Create(logEvent, _options, _keyGenerator))
             .GroupBy(p => p.PartitionKey);
 
         var tableClient = _tableClient.Value;
