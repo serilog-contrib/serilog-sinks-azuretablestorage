@@ -27,8 +27,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var logEvent = new LogEvent(timestamp, level, exception, template, properties);
 
             var options = new AzureTableStorageSinkOptions();
-            var documentFactory = new DefaultDocumentFactory(options);
-            var entity = documentFactory.Create(logEvent);
+            var keyGenerator = new DefaultKeyGenerator();
+            var documentFactory = new DefaultDocumentFactory();
+            var entity = documentFactory.Create(logEvent, options, keyGenerator);
 
             // Timestamp
             Assert.Equal(logEvent.Timestamp, entity.Timestamp);
@@ -75,8 +76,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var logEvent = new Events.LogEvent(DateTime.Now, LogEventLevel.Information, null, template, properties);
 
             var options = new AzureTableStorageSinkOptions();
-            var documentFactory = new DefaultDocumentFactory(options);
-            var entity = documentFactory.Create(logEvent);
+            var keyGenerator = new DefaultKeyGenerator();
+            var documentFactory = new DefaultDocumentFactory();
+            var entity = documentFactory.Create(logEvent, options, keyGenerator);
 
             Assert.Equal(4 + properties.Count, entity.Count - 4);
 
@@ -124,8 +126,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var logEvent = new Events.LogEvent(DateTime.Now, LogEventLevel.Information, null, template, properties);
 
             var options = new AzureTableStorageSinkOptions();
-            var documentFactory = new DefaultDocumentFactory(options);
-            var entity = documentFactory.Create(logEvent);
+            var keyGenerator = new DefaultKeyGenerator();
+            var documentFactory = new DefaultDocumentFactory();
+            var entity = documentFactory.Create(logEvent, options, keyGenerator);
 
             Assert.Equal(4 + properties.Count, entity.Count - 4);
             Assert.Equal("[(\"d1\": [(\"d1k1\": \"d1k1v1\"), (\"d1k2\": \"d1k2v2\"), (\"d1k3\": \"d1k3v3\")]), (\"d2\": [(\"d2k1\": \"d2k1v1\"), (\"d2k2\": \"d2k2v2\"), (\"d2k3\": \"d2k3v3\")]), (\"d0\": 0)]", entity["Dictionary"]);
@@ -169,8 +172,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var logEvent = new Events.LogEvent(DateTime.Now, LogEventLevel.Information, null, template, properties);
 
             var options = new AzureTableStorageSinkOptions();
-            var documentFactory = new DefaultDocumentFactory(options);
-            var entity = documentFactory.Create(logEvent);
+            var keyGenerator = new DefaultKeyGenerator();
+            var documentFactory = new DefaultDocumentFactory();
+            var entity = documentFactory.Create(logEvent, options, keyGenerator);
 
             Assert.Equal(4 + properties.Count, entity.Count - 4);
             Assert.Equal("[[1, 2, 3, 4, 5], [\"a\", \"b\", \"c\", \"d\", \"e\"]]", entity["Sequence"]);
@@ -196,8 +200,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var logEvent = new Events.LogEvent(DateTime.Now, LogEventLevel.Information, null, template, properties);
 
             var options = new AzureTableStorageSinkOptions();
-            var documentFactory = new DefaultDocumentFactory(options);
-            var entity = documentFactory.Create(logEvent);
+            var keyGenerator = new DefaultKeyGenerator();
+            var documentFactory = new DefaultDocumentFactory();
+            var entity = documentFactory.Create(logEvent, options, keyGenerator);
 
             Assert.Equal(245, entity.Count);
         }
@@ -221,8 +226,9 @@ namespace Serilog.Sinks.AzureTableStorage.Tests
             var options = new AzureTableStorageSinkOptions();
             options.PropertyColumns.Add("IncludedProperty");
 
-            var documentFactory = new DefaultDocumentFactory(options);
-            var entity = documentFactory.Create(logEvent);
+            var documentFactory = new DefaultDocumentFactory();
+            var keyGenerator = new DefaultKeyGenerator();
+            var entity = documentFactory.Create(logEvent, options, keyGenerator);
 
             Assert.True(entity.ContainsKey("IncludedProperty"));
             Assert.False(entity.ContainsKey("AdditionalProperty"));

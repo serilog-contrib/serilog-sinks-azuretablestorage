@@ -17,7 +17,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Serilog.Sinks.AzureTableSto
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{18BA35F3-24C4-4297-859A-C3DCB2D00488}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleWebApplication", "samples\SampleWebApplication\SampleWebApplication.csproj", "{420A3E41-C520-420D-95E6-24CF86BF7477}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleWebApplication", "samples\SampleWebApplication\SampleWebApplication.csproj", "{420A3E41-C520-420D-95E6-24CF86BF7477}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleConsoleApplication", "samples\SampleConsoleApplication\SampleConsoleApplication.csproj", "{2F82E3DC-7071-41AD-A1E9-9CB70CF27CDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,12 +39,17 @@ Global
 		{420A3E41-C520-420D-95E6-24CF86BF7477}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{420A3E41-C520-420D-95E6-24CF86BF7477}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{420A3E41-C520-420D-95E6-24CF86BF7477}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F82E3DC-7071-41AD-A1E9-9CB70CF27CDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F82E3DC-7071-41AD-A1E9-9CB70CF27CDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F82E3DC-7071-41AD-A1E9-9CB70CF27CDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F82E3DC-7071-41AD-A1E9-9CB70CF27CDA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{420A3E41-C520-420D-95E6-24CF86BF7477} = {18BA35F3-24C4-4297-859A-C3DCB2D00488}
+		{2F82E3DC-7071-41AD-A1E9-9CB70CF27CDA} = {18BA35F3-24C4-4297-859A-C3DCB2D00488}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {73E16F7E-6DF4-4355-BF3C-73DDBBA1867E}
