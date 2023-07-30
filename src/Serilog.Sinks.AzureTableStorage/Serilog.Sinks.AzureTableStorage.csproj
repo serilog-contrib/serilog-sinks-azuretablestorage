@@ -11,6 +11,7 @@
     <PackageId>Serilog.Sinks.AzureTableStorage</PackageId>
     <PackageTags>serilog;logging;azure</PackageTags>
     <PackageIcon>serilog-sink-nuget.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/serilog-contrib/serilog-sinks-azuretablestorage</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/serilog-contrib/serilog-sinks-azuretablestorage.git</RepositoryUrl>
@@ -23,7 +24,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="images\serilog-sink-nuget.png" Pack="true" PackagePath="\" />
+    <None Include="images\serilog-sink-nuget.png">
+      <Pack>true</Pack>
+      <PackagePath>\</PackagePath>
+      <Visible>false</Visible>
+    </None>
+    <None Include=".\..\..\README.md">
+      <Pack>true</Pack>
+      <PackagePath>\</PackagePath>
+      <Visible>false</Visible>
+    </None>
   </ItemGroup>
 
   <PropertyGroup>
