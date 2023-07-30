@@ -1,8 +1,9 @@
 name: Build
 
 env:
-  BUILD_VERSION: "9.0.${{github.run_number}}${{github.ref != 'refs/heads/master' && '-beta' || ''}}"
-  BUILD_INFORMATION: "9.0.${{github.run_number}}${{github.ref != 'refs/heads/master' && '-beta' || ''}}+Branch.${{github.ref_name}}.Sha.${{github.sha}}"
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  BUILD_PATH: '${{github.workspace}}/artifacts'
 
 on:
   push:
@@ -32,48 +33,59 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: | 
-                3.1.x
-                6.0.x
+              3.1.x
+              6.0.x
 
       - name: Restore Dependencies
         run: dotnet restore
 
       - name: Build Project
-        run: 'dotnet build --no-restore --configuration Release -p:Version="${{env.BUILD_VERSION}}" -p:InformationalVersion="${{env.BUILD_INFORMATION}}"'
+        run: 'dotnet build --no-restore --configuration Release'
 
       - name: Test Project
         run: 'dotnet test --no-build --no-restore --configuration Release'
 
       - name: Create Packages
         if: success() && github.event_name != 'pull_request'
-        run: 'dotnet pack --configuration Release --include-symbols --include-source --no-build --no-restore --output "${{github.workspace}}/artifacts" -p:PackageVersion="${{env.BUILD_VERSION}}"'
+        run: 'dotnet pack --configuration Release --include-symbols --include-source --no-build --no-restore --output "${{env.BUILD_PATH}}"'
 
-      - name: Upload Artifacts
+      - name: Upload Packages
         if: success() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v3
         with:
-          name: artifacts
-          path: '${{github.workspace}}/artifacts'
+          name: packages
+          path: '${{env.BUILD_PATH}}'
 
-      - name: Publish GitHub Packages
-        if: success() && github.event_name != 'pull_request'
-        run: dotnet nuget push ./artifacts/*.nupkg --source https://nuget.pkg.github.com/serilog-contrib/index.json --api-key ${GITHUB_TOKEN} --skip-duplicate
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: success() && github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
 
-      - name: Publish NuGet Packages
-        if: success() && github.event_name != 'pull_request'
-        run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY} --skip-duplicate
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: packages
 
-      - name: Create Release
-        if: success() && github.event_name != 'pull_request' && startsWith(github.ref, 'refs/heads/master')
-        run: 'gh release create "${{env.BUILD_VERSION}}" ./artifacts/*.nupkg --title "v${{env.BUILD_VERSION}}"'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Packages GitHub
+        run: |
+          for package in $(find -name "*.nupkg"); do
+            echo "${0##*/}": Pushing $package...
+            dotnet nuget push $package --source https://nuget.pkg.github.com/loresoft/index.json --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+          done
+
+      - name: Publish Packages Nuget
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          for package in $(find -name "*.nupkg"); do
+            echo "${0##*/}": Pushing $package...
+            dotnet nuget push $package --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_KEY }} --skip-duplicate
+          done
+

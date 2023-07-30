@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 
 using Azure.Data.Tables;
 
@@ -10,7 +9,7 @@ namespace Serilog.Sinks.AzureTableStorage;
 /// </summary>
 public class DefaultTableClientFactory : ITableClientFactory
 {
-    private readonly ConcurrentDictionary<string, TableClient> _tableClients = new();
+    private TableClient _tableClient = null;
 
     /// <summary>
     /// Creates <see cref="TableClient" /> instance with the specified <paramref name="options" />.
@@ -20,29 +19,36 @@ public class DefaultTableClientFactory : ITableClientFactory
     /// <returns>
     /// An insteance of <see cref="TableClient" />
     /// </returns>
-    /// <exception cref="System.NotImplementedException"></exception>
+    /// <exception cref="System.ArgumentNullException">
+    /// if <paramref name="options"/> or <paramref name="tableServiceClient"/> is null
+    /// </exception>
     public TableClient CreateTableClient(AzureTableStorageSinkOptions options, TableServiceClient tableServiceClient)
     {
+        if (options is null)
+            throw new ArgumentNullException(nameof(options));
+        if (tableServiceClient is null)
+            throw new ArgumentNullException(nameof(tableServiceClient));
+
         var tableName = options.StorageTableName ?? "LogEvent";
 
-        return _tableClients.GetOrAdd(tableName, _ =>
+        if (_tableClient != null)
+            return _tableClient;
+
+        _tableClient = tableServiceClient.GetTableClient(tableName);
+
+        try
         {
-            var tableClient = tableServiceClient.GetTableClient(tableName);
+            _tableClient.CreateIfNotExists();
+        }
+        catch (Exception ex)
+        {
+            Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
+            if (options.BypassTableCreationValidation)
+                return _tableClient;
 
-            try
-            {
-                tableClient.CreateIfNotExists();
-            }
-            catch (Exception ex)
-            {
-                Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
-                if (options.BypassTableCreationValidation)
-                    return tableClient;
+            throw;
+        }
 
-                throw;
-            }
-
-            return tableClient;
-        });
+        return _tableClient;
     }
 }
