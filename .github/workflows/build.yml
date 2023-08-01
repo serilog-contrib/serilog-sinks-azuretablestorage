@@ -10,6 +10,8 @@ on:
     branches:
       - master
       - dev
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - master
