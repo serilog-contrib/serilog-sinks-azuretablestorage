@@ -29,11 +29,11 @@ public class DefaultTableClientFactory : ITableClientFactory
         if (tableServiceClient is null)
             throw new ArgumentNullException(nameof(tableServiceClient));
 
-        var tableName = options.StorageTableName ?? "LogEvent";
 
         if (_tableClient != null)
             return _tableClient;
 
+        var tableName = options.StorageTableName ?? "LogEvent";
         _tableClient = tableServiceClient.GetTableClient(tableName);
 
         try

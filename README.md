@@ -9,6 +9,26 @@ var log = new LoggerConfiguration()
     .CreateLogger();
 ```
 
+## Configuration
+
+| Configuration                 | Description                                                                         | Default                   |
+|-------------------------------|-------------------------------------------------------------------------------------|---------------------------|
+| connectionString              | The Cloud Storage Account connection string                                         |                           |
+| sharedAccessSignature         | The storage account/table SAS key                                                   |                           |
+| accountName                   | The storage account name                                                            |                           |
+| restrictedToMinimumLevel      | The minimum log event level required in order to write an event to the sink.        | Verbose                   |
+| formatProvider                | Culture-specific formatting information                                             |                           |
+| storageTableName              | Table name that log entries will be written to                                      | LogEvent                  |
+| writeInBatches                | Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink        | true                      |
+| batchPostingLimit             | The maximum number of events to post in a single batch                              | 100                       |
+| period                        | The time to wait between checking for event batches                                 | 0:0:2                     |
+| keyGenerator                  | The key generator used to create the PartitionKey and the RowKey for each log entry | DefaultKeyGenerator       |
+| propertyColumns               | Specific log event properties to be written as table columns                        |                           |
+| bypassTableCreationValidation | Bypass the exception in case the table creation fails                               | false                     |
+| documentFactory               | Provider to create table document from LogEvent                                     | DefaultDocumentFactory    |
+| tableClientFactory            | Provider to create table client                                                     | DefaultTableClientFactory |
+| partitionKeyRounding          | Partition key rounding time span                                                    | 0:5:0                     |
+
 ### JSON configuration
 
 It is possible to configure the sink using [Serilog.Settings.Configuration](https://github.com/serilog/serilog-settings-configuration) by specifying the table name and connection string in `appsettings.json`:
@@ -50,9 +70,6 @@ In your application's `App.config` or `Web.config` file, specify the file sink a
   </appSettings>
 </configuration>
 ```
-
-### Async approach
-It is possible to configure the collector using [Serilog.Sinks.Async](https://github.com/serilog/serilog-sinks-async) to have an async approach.
 
 ### Example Configuration for ASP.NET
 
