@@ -9,6 +9,26 @@ var log = new LoggerConfiguration()
     .CreateLogger();
 ```
 
+## Configuration
+
+| Configuration                 | Description                                                                         | Default                   |
+|-------------------------------|-------------------------------------------------------------------------------------|---------------------------|
+| connectionString              | The Cloud Storage Account connection string                                         |                           |
+| sharedAccessSignature         | The storage account/table SAS key                                                   |                           |
+| accountName                   | The storage account name                                                            |                           |
+| restrictedToMinimumLevel      | The minimum log event level required in order to write an event to the sink.        | Verbose                   |
+| formatProvider                | Culture-specific formatting information                                             |                           |
+| storageTableName              | Table name that log entries will be written to                                      | LogEvent                  |
+| writeInBatches                | Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink        | true                      |
+| batchPostingLimit             | The maximum number of events to post in a single batch                              | 100                       |
+| period                        | The time to wait between checking for event batches                                 | 0:0:2                     |
+| keyGenerator                  | The key generator used to create the PartitionKey and the RowKey for each log entry | DefaultKeyGenerator       |
+| propertyColumns               | Specific log event properties to be written as table columns                        |                           |
+| bypassTableCreationValidation | Bypass the exception in case the table creation fails                               | false                     |
+| documentFactory               | Provider to create table document from LogEvent                                     | DefaultDocumentFactory    |
+| tableClientFactory            | Provider to create table client                                                     | DefaultTableClientFactory |
+| partitionKeyRounding          | Partition key rounding time span                                                    | 0:5:0                     |
+
 ### JSON configuration
 
 It is possible to configure the sink using [Serilog.Settings.Configuration](https://github.com/serilog/serilog-settings-configuration) by specifying the table name and connection string in `appsettings.json`:
@@ -50,9 +70,6 @@ In your application's `App.config` or `Web.config` file, specify the file sink a
   </appSettings>
 </configuration>
 ```
-
-### Async approach
-It is possible to configure the collector using [Serilog.Sinks.Async](https://github.com/serilog/serilog-sinks-async) to have an async approach.
 
 ### Example Configuration for ASP.NET
 
@@ -140,3 +157,41 @@ public static class Program
     }
 }
 ```
+
+### Change Log
+
+9.0.0
+  * Breaking: Due to issue with creating provides from configuration
+    * `IDocumentFactory.Create` add AzureTableStorageSinkOptions and IKeyGenerator arguments
+    * `IKeyGenerator.GeneratePartitionKey` add AzureTableStorageSinkOptions argument
+    * `IKeyGenerator.GenerateRowKey` add AzureTableStorageSinkOptions argument
+  * Fix: DefaultDocumentFactory and DefaultKeyGenerator needed paramaterless contructor for use in configuration files
+  * Add: ITableClientFactory to control TableClient creation  
+
+8.5.0
+  * Add option for partition key rounding 
+  * Move IKeyGenertor from options
+  * Add DateTime extension methods for partition key and row key
+  * Add sample web project
+
+8.0.0
+  * Breaking: major refactor to simplify code base
+    * Removed: AzureTableStorageWithProperties extension removed, use equivalent AzureTableStorage
+    * Removed: ICloudTableProvider provider removed
+    * Added: IDocumentFactory to allow control over table document
+    * Change: PartitionKey and RowKey changed to new implementation
+
+7.0.0
+  * Update dependencies: repace Microsoft.Azure.Cosmos.Table with Azure.Data.Tables
+
+6.0.0
+  * Updated dependencies: replace deprecated package WindowsAzure.Storage with Microsoft.Azure.Cosmos.Table 1.0.8
+  * Updated dependencies: Serilog 2.10.0
+
+5.0.0
+ * Migrated to new CSPROJ project system
+ * Updated dependencies: WindowsAzure.Storage 8.6.0, Serilog 2.6.0, Serilog.Sinks.PeriodicBatching 2.1.1
+ * Fix #36 - Allow using SAS URI for logging.
+
+1.5
+ * Moved from serilog/serilog

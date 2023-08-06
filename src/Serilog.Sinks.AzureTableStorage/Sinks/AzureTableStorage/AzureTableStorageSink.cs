@@ -33,7 +33,8 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     private readonly TableServiceClient _tableServiceClient;
     private readonly AzureTableStorageSinkOptions _options;
     private readonly IDocumentFactory _documentFactory;
-    private readonly Lazy<TableClient> _tableClient;
+    private readonly IKeyGenerator _keyGenerator;
+    private readonly ITableClientFactory _tableClientFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AzureTableStorageSink" /> class.
@@ -41,7 +42,7 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     /// <param name="options">The options.</param>
     /// <param name="tableServiceClient">The table service client.</param>
     public AzureTableStorageSink(AzureTableStorageSinkOptions options, TableServiceClient tableServiceClient)
-        : this(options, tableServiceClient, null, null)
+        : this(options, tableServiceClient, null, null, null)
     {
     }
 
@@ -52,18 +53,22 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     /// <param name="tableServiceClient">The table service client.</param>
     /// <param name="documentFactory">The document factory.</param>
     /// <param name="keyGenerator">The key generator.</param>
+    /// <param name="tableClientFactory">The table client factory.</param>
     /// <exception cref="System.ArgumentNullException">options</exception>
     /// <exception cref="ArgumentNullException">When <paramref name="options" /> is null</exception>
-    public AzureTableStorageSink(AzureTableStorageSinkOptions options, TableServiceClient tableServiceClient, IDocumentFactory documentFactory, IKeyGenerator keyGenerator)
+    public AzureTableStorageSink(
+        AzureTableStorageSinkOptions options,
+        TableServiceClient tableServiceClient,
+        IDocumentFactory documentFactory,
+        IKeyGenerator keyGenerator,
+        ITableClientFactory tableClientFactory)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _tableServiceClient = tableServiceClient ?? throw new ArgumentNullException(nameof(tableServiceClient));
 
-        keyGenerator ??= new DefaultKeyGenerator(options);
-
-        _documentFactory = documentFactory ?? new DefaultDocumentFactory(options, keyGenerator);
-
-        _tableClient = new Lazy<TableClient>(CreateTableClient);
+        _keyGenerator = keyGenerator ?? new DefaultKeyGenerator();
+        _documentFactory = documentFactory ?? new DefaultDocumentFactory();
+        _tableClientFactory = tableClientFactory ?? new DefaultTableClientFactory();
     }
 
     /// <summary>
@@ -73,8 +78,8 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     /// <exception cref="System.NotImplementedException"></exception>
     public void Emit(LogEvent logEvent)
     {
-        var document = _documentFactory.Create(logEvent);
-        var tableClient = _tableClient.Value;
+        var document = _documentFactory.Create(logEvent, _options, _keyGenerator);
+        var tableClient = _tableClientFactory.CreateTableClient(_options, _tableServiceClient);
 
         tableClient.AddEntity(document);
     }
@@ -88,10 +93,10 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     {
         // write documents in batches by partition key
         var documentGroups = batch
-            .Select(_documentFactory.Create)
+            .Select(logEvent => _documentFactory.Create(logEvent, _options, _keyGenerator))
             .GroupBy(p => p.PartitionKey);
 
-        var tableClient = _tableClient.Value;
+        var tableClient = _tableClientFactory.CreateTableClient(_options, _tableServiceClient);
 
         foreach (var documentGroup in documentGroups)
         {
@@ -115,26 +120,4 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     {
         return Task.CompletedTask;
     }
-
-    private TableClient CreateTableClient()
-    {
-        var tableName = _options.StorageTableName ?? "LogEvent";
-        var tableClient = _tableServiceClient.GetTableClient(tableName);
-
-        try
-        {
-            tableClient.CreateIfNotExists();
-        }
-        catch (Exception ex)
-        {
-            Debugging.SelfLog.WriteLine($"Failed to create table: {ex}");
-            if (_options.BypassTableCreationValidation)
-                return tableClient;
-
-            throw;
-        }
-
-        return tableClient;
-    }
 }
-

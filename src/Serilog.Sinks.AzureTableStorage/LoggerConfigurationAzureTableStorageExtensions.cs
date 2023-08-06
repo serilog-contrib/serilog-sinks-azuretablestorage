@@ -46,21 +46,21 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     public static readonly TimeSpan DefaultPeriod = TimeSpan.FromSeconds(2);
 
     /// <summary>
-    /// Adds a sink that writes log events as records in an Azure Table Storage table (default LogEventEntity) using the given storage account.
+    /// Adds a sink that writes log events as records in an Azure Table Storage table using the given storage account.
     /// </summary>
     /// <param name="loggerConfiguration">The logger configuration.</param>
     /// <param name="storageAccount">The Cloud Storage Account to use to insert the log entries to.</param>
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
-    /// key used for the events so is not enabled by default.</param>
+    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="tableClientFactory">The table client factory.</param>
     /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
@@ -77,6 +77,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         string[] propertyColumns = null,
         bool bypassTableCreationValidation = false,
         IDocumentFactory documentFactory = null,
+        ITableClientFactory tableClientFactory = null,
         TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
@@ -98,26 +99,26 @@ public static class LoggerConfigurationAzureTableStorageExtensions
             propertyColumns: propertyColumns,
             bypassTableCreationValidation: bypassTableCreationValidation,
             documentFactory: documentFactory,
+            tableClientFactory: tableClientFactory,
             partitionKeyRounding: partitionKeyRounding);
     }
 
     /// <summary>
-    /// Adds a sink that writes log events as records in Azure Table Storage table (default name LogEventEntity) using the given
-    /// storage account connection string.
+    /// Adds a sink that writes log events as records in Azure Table Storage table using the given storage account connection string.
     /// </summary>
     /// <param name="loggerConfiguration">The logger configuration.</param>
     /// <param name="connectionString">The Cloud Storage Account connection string to use to insert the log entries to.</param>
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
-    /// key used for the events so is not enabled by default.</param>
+    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
     /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="tableClientFactory">The table client factory.</param>
     /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
@@ -134,6 +135,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         string[] propertyColumns = null,
         bool bypassTableCreationValidation = false,
         IDocumentFactory documentFactory = null,
+        ITableClientFactory tableClientFactory = null,
         TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
@@ -155,12 +157,12 @@ public static class LoggerConfigurationAzureTableStorageExtensions
             propertyColumns: propertyColumns,
             bypassTableCreationValidation: bypassTableCreationValidation,
             documentFactory: documentFactory,
+            tableClientFactory: tableClientFactory,
             partitionKeyRounding: partitionKeyRounding);
     }
 
     /// <summary>
-    /// Adds a sink that writes log events as records in Azure Table Storage table (default name LogEventEntity) using the given
-    /// storage account name and Shared Access Signature (SAS) URL.
+    /// Adds a sink that writes log events as records in Azure Table Storage table using the given storage account name and Shared Access Signature (SAS) URL.
     /// </summary>
     /// <param name="loggerConfiguration">The logger configuration.</param>
     /// <param name="sharedAccessSignature">The storage account/table SAS key.</param>
@@ -169,13 +171,13 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
-    /// key used for the events so is not enabled by default.</param>
+    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="tableClientFactory">The table client factory.</param>
     /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
@@ -193,6 +195,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         IKeyGenerator keyGenerator = null,
         string[] propertyColumns = null,
         IDocumentFactory documentFactory = null,
+        ITableClientFactory tableClientFactory = null,
         TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
@@ -217,11 +220,12 @@ public static class LoggerConfigurationAzureTableStorageExtensions
             keyGenerator: keyGenerator,
             propertyColumns: propertyColumns,
             documentFactory: documentFactory,
+            tableClientFactory: tableClientFactory,
             partitionKeyRounding: partitionKeyRounding);
     }
 
     /// <summary>
-    /// Adds a sink that writes log events as records in an Azure Table Storage table (default LogEventEntity) using the given storage account.
+    /// Adds a sink that writes log events as records in an Azure Table Storage table using the given storage account.
     /// </summary>
     /// <param name="loggerConfiguration">The logger configuration.</param>
     /// <param name="formatter">Use a Serilog ITextFormatter such as CompactJsonFormatter to store object in data column of Azure table</param>
@@ -229,14 +233,14 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
-    /// key used for the events so is not enabled by default.</param>
+    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink;</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="tableClientFactory">The table client factory.</param>
     /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
@@ -254,6 +258,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         string[] propertyColumns = null,
         bool bypassTableCreationValidation = false,
         IDocumentFactory documentFactory = null,
+        ITableClientFactory tableClientFactory = null,
         TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
@@ -276,10 +281,16 @@ public static class LoggerConfigurationAzureTableStorageExtensions
                 PartitionKeyRounding = partitionKeyRounding ?? TimeSpan.FromMinutes(5)
             };
 
-            keyGenerator ??= new DefaultKeyGenerator(options);
-            documentFactory ??= new DefaultDocumentFactory(options, keyGenerator);
+            keyGenerator ??= new DefaultKeyGenerator();
+            documentFactory ??= new DefaultDocumentFactory();
+            tableClientFactory ??= new DefaultTableClientFactory();
 
-            var tableStorageSink = new AzureTableStorageSink(options, storageAccount, documentFactory, keyGenerator);
+            var tableStorageSink = new AzureTableStorageSink(
+                options: options,
+                tableServiceClient: storageAccount,
+                documentFactory: documentFactory,
+                keyGenerator: keyGenerator,
+                tableClientFactory: tableClientFactory);
 
             if (writeInBatches)
             {
@@ -308,8 +319,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     }
 
     /// <summary>
-    /// Adds a sink that writes log events as records in Azure Table Storage table (default name LogEventEntity) using the given
-    /// storage account connection string.
+    /// Adds a sink that writes log events as records in Azure Table Storage table using the given storage account connection string.
     /// </summary>
     /// <param name="loggerConfiguration">The logger configuration.</param>
     /// <param name="formatter">Use a Serilog ITextFormatter such as CompactJsonFormatter to store object in data column of Azure table</param>
@@ -317,14 +327,14 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
-    /// key used for the events so is not enabled by default.</param>
+    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
     /// <param name="bypassTableCreationValidation">Bypass the exception in case the table creation fails.</param>
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="tableClientFactory">The table client factory.</param>
     /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
@@ -342,6 +352,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         string[] propertyColumns = null,
         bool bypassTableCreationValidation = false,
         IDocumentFactory documentFactory = null,
+        ITableClientFactory tableClientFactory = null,
         TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
@@ -354,6 +365,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         try
         {
             var storageAccount = new TableServiceClient(connectionString);
+
             return AzureTableStorage(
                 loggerConfiguration: loggerConfiguration,
                 formatter: formatter,
@@ -368,6 +380,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
                 propertyColumns: propertyColumns,
                 bypassTableCreationValidation: bypassTableCreationValidation,
                 documentFactory: documentFactory,
+                tableClientFactory: tableClientFactory,
                 partitionKeyRounding: partitionKeyRounding);
         }
         catch (Exception ex)
@@ -380,7 +393,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     }
 
     /// <summary>
-    /// Adds a sink that writes log events as records in Azure Table Storage table (default name LogEventEntity) using the given
+    /// Adds a sink that writes log events as records in Azure Table Storage table using the given
     /// storage account name and Shared Access Signature (SAS) URL.
     /// </summary>
     /// <param name="loggerConfiguration">The logger configuration.</param>
@@ -391,13 +404,13 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink; this alters the partition
-    /// key used for the events so is not enabled by default.</param>
+    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
     /// <param name="propertyColumns">Specific properties to be written to columns.</param>
     /// <param name="documentFactory">Cloud table provider to get current log table.</param>
+    /// <param name="tableClientFactory">The table client factory.</param>
     /// <param name="partitionKeyRounding">Partition key rounding time span.</param>
     /// <returns>Logger configuration, allowing configuration to continue.</returns>
     /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
@@ -416,6 +429,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         IKeyGenerator keyGenerator = null,
         string[] propertyColumns = null,
         IDocumentFactory documentFactory = null,
+        ITableClientFactory tableClientFactory = null,
         TimeSpan? partitionKeyRounding = null)
     {
         if (loggerConfiguration == null)
@@ -453,6 +467,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
                 propertyColumns: propertyColumns,
                 bypassTableCreationValidation: true,
                 documentFactory: documentFactory,
+                tableClientFactory: tableClientFactory,
                 partitionKeyRounding: partitionKeyRounding);
         }
         catch (Exception ex)
