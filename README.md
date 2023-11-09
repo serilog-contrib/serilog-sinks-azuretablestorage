@@ -160,6 +160,9 @@ public static class Program
 
 ### Change Log
 
+9.1.0
+  * Add: Built-in trace and span id support
+
 9.0.0
   * Breaking: Due to issue with creating provides from configuration
     * `IDocumentFactory.Create` add AzureTableStorageSinkOptions and IKeyGenerator arguments
