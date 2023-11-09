@@ -47,6 +47,11 @@ public class DefaultDocumentFactory : IDocumentFactory
         tableEntity["MessageTemplate"] = logEvent.MessageTemplate.Text;
         tableEntity["RenderedMessage"] = logEvent.RenderMessage(options.FormatProvider);
 
+        if (logEvent.TraceId != null)
+            tableEntity["TraceId"] = logEvent.TraceId.Value.ToHexString();
+
+        if (logEvent.SpanId != null)
+            tableEntity["SpanId"] = logEvent.SpanId.Value.ToHexString();
 
         if (logEvent.Exception != null)
             tableEntity["Exception"] = logEvent.Exception.ToString();
