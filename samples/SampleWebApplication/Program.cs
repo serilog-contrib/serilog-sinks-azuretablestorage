@@ -36,6 +36,7 @@ public class Program
                     .ReadFrom.Services(services)
                     .Enrich.FromLogContext()
                     .Enrich.WithProperty("ApplicationName", builder.Environment.ApplicationName)
+                    .Enrich.WithProperty("ApplicationVersion", ThisAssembly.InformationalVersion)
                     .Enrich.WithProperty("EnvironmentName", builder.Environment.EnvironmentName)
                     .WriteTo.Console(outputTemplate: OutputTemplate)
                     .WriteTo.File(
