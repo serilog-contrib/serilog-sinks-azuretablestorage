@@ -66,7 +66,8 @@
                 <colgroup>
                     <col style="width: 30px" />
                     <col style="width: 30px" />
-                    <col style="width: 200px" />
+                    <col style="width: 100px" />
+                    <col style="width: 150px" />
                     <col style="width: 120px" />
                     <col style="" />
                 </colgroup>
@@ -75,6 +76,7 @@
                         <th scope="col"></th>
                         <th scope="col"></th>
                         <th scope="col">Date</th>
+                        <th scope="col">Time</th>
                         <th scope="col">Level</th>
                         <th scope="col">Message</th>
                     </tr>
@@ -111,7 +113,8 @@
                                         break;
                                 }
                             </td>
-                            <td>@log.Timestamp?.ToString("g")</td>
+                            <td>@log.Timestamp?.ToString("d")</td>
+                            <td>@log.Timestamp?.ToString("hh:mm:ss.fffffff")</td>
                             <td>@log.Level</td>
                             <td>@log.RenderedMessage</td>
                         </tr>
