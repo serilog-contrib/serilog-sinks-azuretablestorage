@@ -38,7 +38,7 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// A reasonable default for the number of events posted in
     /// each batch.
     /// </summary>
-    public const int DefaultBatchSizeLimit = 100;
+    public const int DefaultBatchSizeLimit = 1000;
 
     /// <summary>
     /// A reasonable default time to wait between checking for event batches.

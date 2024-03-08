@@ -7,6 +7,7 @@ namespace Serilog.Sinks.AzureTableStorage.Extensions;
 /// </summary>
 public static class DateTimeExtensions
 {
+
     /// <summary>
     /// Generates the PartitionKey based on the logEvent timestamp
     /// </summary>
@@ -20,11 +21,7 @@ public static class DateTimeExtensions
     /// </remarks>
     public static string GeneratePartitionKey(this DateTime utcEventTime, TimeSpan? roundSpan = null)
     {
-        var span = roundSpan ?? TimeSpan.FromMinutes(5);
-        var roundedEvent = Round(utcEventTime, span);
-
-        // create a 19 character String for reverse chronological ordering.
-        return $"{DateTime.MaxValue.Ticks - roundedEvent.Ticks:D19}";
+        return DefaultKeyGenerator.GeneratePartitionKey(utcEventTime, roundSpan);
     }
 
     /// <summary>
@@ -36,8 +33,7 @@ public static class DateTimeExtensions
     /// </returns>
     public static string GenerateRowKey(this DateTime utcEventTime)
     {
-        // create a 19 character String for reverse chronological ordering.
-        return $"{DateTime.MaxValue.Ticks - utcEventTime.Ticks:D19}";
+        return DefaultKeyGenerator.GenerateRowKey(utcEventTime);
     }
 
     /// <summary>
@@ -48,7 +44,6 @@ public static class DateTimeExtensions
     /// <returns>The rounded date</returns>
     public static DateTime Round(this DateTime date, TimeSpan span)
     {
-        long ticks = (date.Ticks + (span.Ticks / 2) + 1) / span.Ticks;
-        return new DateTime(ticks * span.Ticks);
+        return DefaultKeyGenerator.Round(date, span);
     }
 }
