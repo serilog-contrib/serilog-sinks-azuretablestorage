@@ -31,7 +31,7 @@ public class DefaultKeyGenerator : IKeyGenerator
         var utcEventTime = logEvent.Timestamp.UtcDateTime;
         var partitionKeyRounding = options?.PartitionKeyRounding;
 
-        return utcEventTime.GeneratePartitionKey(partitionKeyRounding);
+        return GeneratePartitionKey(utcEventTime, partitionKeyRounding);
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public class DefaultKeyGenerator : IKeyGenerator
         // row key created in reverse chronological order so newest are always first
 
         var utcEventTime = logEvent.Timestamp.UtcDateTime;
-        return utcEventTime.GenerateRowKey();
+        return GenerateRowKey(utcEventTime);
     }
 
 
@@ -67,7 +67,7 @@ public class DefaultKeyGenerator : IKeyGenerator
     public static string GeneratePartitionKey(DateTime utcEventTime, TimeSpan? roundSpan = null)
     {
         var span = roundSpan ?? TimeSpan.FromMinutes(5);
-        var roundedEvent = Round(utcEventTime, span);
+        var roundedEvent = utcEventTime.Round(span);
 
         // create a 19 character String for reverse chronological ordering.
         return $"{DateTime.MaxValue.Ticks - roundedEvent.Ticks:D19}";
@@ -82,37 +82,10 @@ public class DefaultKeyGenerator : IKeyGenerator
     /// </returns>
     public static string GenerateRowKey(DateTime utcEventTime)
     {
-        // create a reverse chronological ordering date
-        var targetTicks = DateTime.MaxValue.Ticks - utcEventTime.Ticks;
+        // create a reverse chronological ordering date, newest logs sorted first
+        var timestamp = utcEventTime.ToReverseChronological();
 
-        // add incrementing value to ensure unique
-        int padding = Next();
-
-        return $"{targetTicks:D19}{padding:D4}";
+        // use Ulid for speed and efficiency
+        return Ulid.NewUlid(timestamp).ToString();
     }
-
-    /// <summary>
-    /// Rounds the specified date.
-    /// </summary>
-    /// <param name="date">The date to round.</param>
-    /// <param name="span">The span.</param>
-    /// <returns>The rounded date</returns>
-    public static DateTime Round(DateTime date, TimeSpan span)
-    {
-        long ticks = (date.Ticks + (span.Ticks / 2) + 1) / span.Ticks;
-        return new DateTime(ticks * span.Ticks);
-    }
-
-
-    private static int _counter = new Random().Next(_minCounter, _maxCounter);
-
-    private const int _minCounter = 1;
-    private const int _maxCounter = 9999;
-
-    private static int Next()
-    {
-        Interlocked.Increment(ref _counter);
-        return Interlocked.CompareExchange(ref _counter, _minCounter, _maxCounter);
-    }
-
 }
