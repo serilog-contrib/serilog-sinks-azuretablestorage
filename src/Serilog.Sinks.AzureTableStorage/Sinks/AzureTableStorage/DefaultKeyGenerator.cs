@@ -1,4 +1,5 @@
 using System;
+using System.Dynamic;
 using System.Threading;
 
 using Azure.Data.Tables;
@@ -11,6 +12,7 @@ namespace Serilog.Sinks.AzureTableStorage;
 /// <summary>
 /// Default document key generator
 /// </summary>
+/// <seealso cref="Serilog.Sinks.AzureTableStorage.IKeyGenerator" />
 public class DefaultKeyGenerator : IKeyGenerator
 {
     private const string PartitionKeyName = nameof(ITableEntity.PartitionKey);
@@ -31,7 +33,7 @@ public class DefaultKeyGenerator : IKeyGenerator
         // batch insert is used to get around time based partition key performance issues
         // values are created in reverse chronological order so newest are always first
 
-        var utcEventTime = logEvent.Timestamp.UtcDateTime;
+        var utcEventTime = logEvent.Timestamp;
         var partitionKeyRounding = options?.PartitionKeyRounding;
 
         return GeneratePartitionKey(utcEventTime, partitionKeyRounding);
@@ -50,7 +52,7 @@ public class DefaultKeyGenerator : IKeyGenerator
 
         // row key created in reverse chronological order so newest are always first
 
-        var utcEventTime = logEvent.Timestamp.UtcDateTime;
+        var utcEventTime = logEvent.Timestamp;
         return GenerateRowKey(utcEventTime);
     }
 
@@ -68,7 +70,12 @@ public class DefaultKeyGenerator : IKeyGenerator
     /// </remarks>
     public static string GeneratePartitionKey(DateTimeOffset eventTime, TimeSpan? roundSpan = null)
     {
-        return GeneratePartitionKey(eventTime.UtcDateTime, roundSpan);
+        var span = roundSpan ?? TimeSpan.FromMinutes(5);
+        var dateTime = eventTime.ToUniversalTime();
+        var roundedEvent = dateTime.Round(span);
+
+        // create a 19 character String for reverse chronological ordering.
+        return $"{DateTimeOffset.MaxValue.Ticks - roundedEvent.Ticks:D19}";
     }
 
     /// <summary>
@@ -84,12 +91,10 @@ public class DefaultKeyGenerator : IKeyGenerator
     /// </remarks>
     public static string GeneratePartitionKey(DateTime eventTime, TimeSpan? roundSpan = null)
     {
-        var span = roundSpan ?? TimeSpan.FromMinutes(5);
         var dateTime = eventTime.ToUniversalTime();
-        var roundedEvent = dateTime.Round(span);
+        var dateTimeOffset = new DateTimeOffset(dateTime, TimeSpan.Zero);
 
-        // create a 19 character String for reverse chronological ordering.
-        return $"{DateTime.MaxValue.Ticks - roundedEvent.Ticks:D19}";
+        return GeneratePartitionKey(dateTimeOffset, roundSpan);
     }
 
 
@@ -102,7 +107,13 @@ public class DefaultKeyGenerator : IKeyGenerator
     /// </returns>
     public static string GenerateRowKey(DateTimeOffset eventTime)
     {
-        return GenerateRowKey(eventTime.UtcDateTime);
+        var dateTime = eventTime.ToUniversalTime();
+
+        // create a reverse chronological ordering date, newest logs sorted first
+        var timestamp = dateTime.ToReverseChronological();
+
+        // use Ulid for speed and efficiency
+        return Ulid.NewUlid(timestamp).ToString();
     }
 
     /// <summary>
@@ -115,12 +126,9 @@ public class DefaultKeyGenerator : IKeyGenerator
     public static string GenerateRowKey(DateTime eventTime)
     {
         var dateTime = eventTime.ToUniversalTime();
+        var dateTimeOffset = new DateTimeOffset(dateTime, TimeSpan.Zero);
 
-        // create a reverse chronological ordering date, newest logs sorted first
-        var timestamp = dateTime.ToReverseChronological();
-
-        // use Ulid for speed and efficiency
-        return Ulid.NewUlid(timestamp).ToString();
+        return GenerateRowKey(dateTimeOffset);
     }
 
 
@@ -129,11 +137,30 @@ public class DefaultKeyGenerator : IKeyGenerator
     /// Generates the partition key query using the specified <paramref name="date"/>.
     /// </summary>
     /// <param name="date">The date to use for query.</param>
+    /// <param name="offset">The date's offset from Coordinated Universal Time (UTC).</param>
     /// <returns>An Azure Table partiion key query.</returns>
-    public static string GeneratePartitionKeyQuery(DateOnly date)
+    public static string GeneratePartitionKeyQuery(DateOnly date, TimeSpan offset)
     {
         // date is assumed to be in local time, will be converted to UTC
-        var eventTime = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Local);
+        var eventTime = new DateTimeOffset(date.Year, date.Month, date.Day, 0, 0, 0, offset);
+        return GeneratePartitionKeyQuery(eventTime);
+    }
+
+    /// <summary>
+    /// Generates the partition key query using the specified <paramref name="date"/>.
+    /// </summary>
+    /// <param name="date">The date to use for query.</param>
+    /// <param name="zone">The time zone the date is in.</param>
+    /// <returns>An Azure Table partiion key query.</returns>
+    public static string GeneratePartitionKeyQuery(DateOnly date, TimeZoneInfo zone = null)
+    {
+        // date is assumed to be in local time, will be converted to UTC
+        zone ??= TimeZoneInfo.Local;
+
+        var dateTime = date.ToDateTime(TimeOnly.MinValue);
+        var offset = zone.GetUtcOffset(dateTime);
+
+        var eventTime = new DateTimeOffset(dateTime, offset);
         return GeneratePartitionKeyQuery(eventTime);
     }
 #endif
@@ -146,11 +173,9 @@ public class DefaultKeyGenerator : IKeyGenerator
     public static string GeneratePartitionKeyQuery(DateTime eventTime)
     {
         var dateTime = eventTime.ToUniversalTime();
+        var dateTimeOffset = new DateTimeOffset(dateTime, TimeSpan.Zero);
 
-        var upper = dateTime.ToReverseChronological().Ticks.ToString("D19");
-        var lower = dateTime.AddDays(1).ToReverseChronological().Ticks.ToString("D19");
-
-        return $"({PartitionKeyName} ge '{lower}') and ({PartitionKeyName} lt '{upper}')";
+        return GeneratePartitionKeyQuery(dateTimeOffset);
     }
 
     /// <summary>
@@ -160,7 +185,12 @@ public class DefaultKeyGenerator : IKeyGenerator
     /// <returns>An Azure Table partiion key query.</returns>
     public static string GeneratePartitionKeyQuery(DateTimeOffset eventTime)
     {
-        return GeneratePartitionKeyQuery(eventTime.UtcDateTime);
+        var dateTime = eventTime.ToUniversalTime();
+
+        var upper = dateTime.ToReverseChronological().Ticks.ToString("D19");
+        var lower = dateTime.AddDays(1).ToReverseChronological().Ticks.ToString("D19");
+
+        return $"({PartitionKeyName} ge '{lower}') and ({PartitionKeyName} lt '{upper}')";
     }
 
 }

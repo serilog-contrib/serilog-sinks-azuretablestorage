@@ -32,7 +32,7 @@ public class DefaultKeyGeneratorTests
         parsed.Should().BeTrue();
         ulid.Should().NotBeNull();
 
-        var reversed = dateTime.ToReverseChronological();
+        var reversed = dateTime.ToUniversalTime().ToReverseChronological();
         var ulidDate = ulid.Time;
 
         ulidDate.Year.Should().Be(reversed.Year);
@@ -56,16 +56,17 @@ public class DefaultKeyGeneratorTests
     [Fact]
     public void GeneratePartitionKeyDateTimeNow()
     {
-        var dateTime = new DateTime(2024, 4, 1, 23, 0, 0, DateTimeKind.Local);
+        var dateTime = new DateTimeOffset(2024, 4, 1, 23, 0, 0, TimeSpan.FromHours(-5));
+        var eventTime = dateTime.UtcDateTime;
 
-        var partitionKey = DefaultKeyGenerator.GeneratePartitionKey(dateTime);
+        var partitionKey = DefaultKeyGenerator.GeneratePartitionKey(eventTime);
         partitionKey.Should().NotBeNull();
         partitionKey.Should().Be("2516902703999999999");
     }
 
     [Theory]
     [MemberData(nameof(GetDateRounding))]
-    public void GeneratePartitionKeyDateTimeNowRound(DateTime dateTime, string expected)
+    public void GeneratePartitionKeyDateTimeNowRound(DateTimeOffset dateTime, string expected)
     {
         var partitionKey = DefaultKeyGenerator.GeneratePartitionKey(dateTime);
         partitionKey.Should().NotBeNull();
@@ -76,36 +77,37 @@ public class DefaultKeyGeneratorTests
     {
         yield return new object[]
         {
-            new DateTime(2024, 4, 1, 23, 1, 0, DateTimeKind.Local),
+            new DateTimeOffset(2024, 4, 1, 23, 1, 0, TimeSpan.FromHours(-5)),
             "2516902703999999999"
         };
         yield return new object[]
         {
-            new DateTime(2024, 4, 1, 23, 2, 55, DateTimeKind.Local),
+            new DateTimeOffset(2024, 4, 1, 23, 2, 55, TimeSpan.FromHours(-5)),
             "2516902700999999999"
         };
         yield return new object[]
         {
-            new DateTime(2024, 4, 1, 23, 3, 5, DateTimeKind.Local),
+            new DateTimeOffset(2024, 4, 1, 23, 3, 5, TimeSpan.FromHours(-5)),
             "2516902700999999999"
         };
         yield return new object[]
         {
-            new DateTime(2024, 4, 1, 23, 4, 11, DateTimeKind.Local),
+            new DateTimeOffset(2024, 4, 1, 23, 4, 11, TimeSpan.FromHours(-5)),
             "2516902700999999999"
         };
         yield return new object[]
         {
-            new DateTime(2024, 4, 1, 23, 4, 43, DateTimeKind.Local),
+            new DateTimeOffset(2024, 4, 1, 23, 4, 43, TimeSpan.FromHours(-5)),
             "2516902700999999999"
         };
     }
+
     [Fact]
     public void GeneratePartitionKeyQueryDateOnly()
     {
         var date = new DateOnly(2024, 4, 1);
 
-        var partitionKeyQuery = DefaultKeyGenerator.GeneratePartitionKeyQuery(date);
+        var partitionKeyQuery = DefaultKeyGenerator.GeneratePartitionKeyQuery(date, TimeSpan.FromHours(-5));
         partitionKeyQuery.Should().NotBeNull();
         partitionKeyQuery.Should().Be("(PartitionKey ge '2516902667999999999') and (PartitionKey lt '2516903531999999999')");
     }
@@ -113,9 +115,10 @@ public class DefaultKeyGeneratorTests
     [Fact]
     public void GeneratePartitionKeyQueryDateTime()
     {
-        var dateTime = new DateTime(2024, 4, 1, 0, 0, 0, DateTimeKind.Local);
+        var dateTime = new DateTimeOffset(2024, 4, 1, 0, 0, 0, TimeSpan.FromHours(-5));
+        var eventTime = dateTime.UtcDateTime;
 
-        var partitionKeyQuery = DefaultKeyGenerator.GeneratePartitionKeyQuery(dateTime);
+        var partitionKeyQuery = DefaultKeyGenerator.GeneratePartitionKeyQuery(eventTime);
         partitionKeyQuery.Should().NotBeNull();
         partitionKeyQuery.Should().Be("(PartitionKey ge '2516902667999999999') and (PartitionKey lt '2516903531999999999')");
     }
