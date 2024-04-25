@@ -18,7 +18,6 @@ public static class DateTimeExtensions
     /// <remarks>
     /// The partition key based on the Timestamp rounded to the nearest 5 min
     /// </remarks>
-    [Obsolete("Use DefaultKeyGenerator instead")]
     public static string GeneratePartitionKey(this DateTime utcEventTime, TimeSpan? roundSpan = null)
     {
         return DefaultKeyGenerator.GeneratePartitionKey(utcEventTime, roundSpan);
@@ -31,7 +30,6 @@ public static class DateTimeExtensions
     /// <returns>
     /// The generated RowKey
     /// </returns>
-    [Obsolete("Use DefaultKeyGenerator instead")]
     public static string GenerateRowKey(this DateTime utcEventTime)
     {
         return DefaultKeyGenerator.GenerateRowKey(utcEventTime);

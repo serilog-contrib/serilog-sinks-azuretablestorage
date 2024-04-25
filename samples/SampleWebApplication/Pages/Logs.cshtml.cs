@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 using SampleWebApplication.Models;
 
+using Serilog.Sinks.AzureTableStorage;
 using Serilog.Sinks.AzureTableStorage.Extensions;
 
 namespace SampleWebApplication.Pages;
@@ -38,11 +39,7 @@ public class LogsModel : PageModel
     {
         var logTable = _tableServiceClient.GetTableClient("SampleLog");
 
-        var dateTime = Date.Date.ToUniversalTime();
-        var upper = dateTime.GeneratePartitionKey();
-        var lower = dateTime.AddDays(1).GeneratePartitionKey();
-
-        var filter = $"({nameof(ITableEntity.PartitionKey)} ge '{lower}') and ({nameof(ITableEntity.PartitionKey)} lt '{upper}')";
+        var filter = DefaultKeyGenerator.GeneratePartitionKeyQuery(Date.Date);
 
         if (!string.IsNullOrWhiteSpace(Level))
             filter += $" and ({nameof(LogEventModel.Level)} eq '{Level}')";
