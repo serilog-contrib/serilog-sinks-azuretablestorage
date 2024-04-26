@@ -142,8 +142,10 @@ public class DefaultKeyGenerator : IKeyGenerator
     public static string GeneratePartitionKeyQuery(DateOnly date, TimeSpan offset)
     {
         // date is assumed to be in local time, will be converted to UTC
-        var eventTime = new DateTimeOffset(date.Year, date.Month, date.Day, 0, 0, 0, offset);
-        return GeneratePartitionKeyQuery(eventTime);
+        var startTime = new DateTimeOffset(date.Year, date.Month, date.Day, 0, 0, 0, offset);
+        var endTime = startTime.AddDays(1);
+
+        return GeneratePartitionKeyQuery(startTime, endTime);
     }
 
     /// <summary>
@@ -155,42 +157,44 @@ public class DefaultKeyGenerator : IKeyGenerator
     public static string GeneratePartitionKeyQuery(DateOnly date, TimeZoneInfo zone = null)
     {
         // date is assumed to be in local time, will be converted to UTC
-        zone ??= TimeZoneInfo.Local;
+        var startTime = date.ToDateTimeOffset(zone);
+        var endTime = date.AddDays(1).ToDateTimeOffset(zone);
 
-        var dateTime = date.ToDateTime(TimeOnly.MinValue);
-        var offset = zone.GetUtcOffset(dateTime);
-
-        var eventTime = new DateTimeOffset(dateTime, offset);
-        return GeneratePartitionKeyQuery(eventTime);
+        return GeneratePartitionKeyQuery(startTime, endTime);
     }
 #endif
 
     /// <summary>
-    /// Generates the partition key query using the specified <paramref name="eventTime"/>.
+    /// Generates the partition key query using the specified <paramref name="startDate"/> and <paramref name="endDate"/>.
     /// </summary>
-    /// <param name="eventTime">The date to use for query.</param>
+    /// <param name="startDate">The start date to use for query.</param>
+    /// <param name="endDate">The end date to use for query.</param>
     /// <returns>An Azure Table partiion key query.</returns>
-    public static string GeneratePartitionKeyQuery(DateTime eventTime)
+    public static string GeneratePartitionKeyQuery(DateTime startDate, DateTime endDate)
     {
-        var dateTime = eventTime.ToUniversalTime();
-        var dateTimeOffset = new DateTimeOffset(dateTime, TimeSpan.Zero);
+        var startTime = startDate.ToUniversalTime();
+        var startTimeOffset = new DateTimeOffset(startTime, TimeSpan.Zero);
 
-        return GeneratePartitionKeyQuery(dateTimeOffset);
+        var endTime = endDate.ToUniversalTime();
+        var endTimeOffset = new DateTimeOffset(endTime, TimeSpan.Zero);
+
+        return GeneratePartitionKeyQuery(startTimeOffset, endTimeOffset);
     }
 
     /// <summary>
-    /// Generates the partition key query using the specified <paramref name="eventTime"/>.
+    /// Generates the partition key query using the specified <paramref name="startDate"/> and <paramref name="endDate"/>.
     /// </summary>
-    /// <param name="eventTime">The date to use for query.</param>
+    /// <param name="startDate">The start date to use for query.</param>
+    /// <param name="endDate">The end date to use for query.</param>
     /// <returns>An Azure Table partiion key query.</returns>
-    public static string GeneratePartitionKeyQuery(DateTimeOffset eventTime)
+    public static string GeneratePartitionKeyQuery(DateTimeOffset startDate, DateTimeOffset endDate)
     {
-        var dateTime = eventTime.ToUniversalTime();
+        var startTime = startDate.ToUniversalTime();
+        var endTime = endDate.ToUniversalTime();
 
-        var upper = dateTime.ToReverseChronological().Ticks.ToString("D19");
-        var lower = dateTime.AddDays(1).ToReverseChronological().Ticks.ToString("D19");
+        var upper = startTime.ToReverseChronological().Ticks.ToString("D19");
+        var lower = endTime.ToReverseChronological().Ticks.ToString("D19");
 
         return $"({PartitionKeyName} ge '{lower}') and ({PartitionKeyName} lt '{upper}')";
     }
-
 }
