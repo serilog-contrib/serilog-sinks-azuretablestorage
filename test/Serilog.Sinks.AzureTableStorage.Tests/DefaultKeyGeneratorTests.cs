@@ -116,10 +116,10 @@ public class DefaultKeyGeneratorTests
     public void GeneratePartitionKeyQueryDateTime()
     {
         var startDate = new DateTimeOffset(2024, 4, 1, 0, 0, 0, TimeSpan.FromHours(-5));
-        var startTime = startDate.DateTime;
+        var startTime = startDate.UtcDateTime;
 
         var endDate = new DateTimeOffset(2024, 4, 2, 0, 0, 0, TimeSpan.FromHours(-5));
-        var endTime = endDate.DateTime;
+        var endTime = endDate.UtcDateTime;
 
         var partitionKeyQuery = DefaultKeyGenerator.GeneratePartitionKeyQuery(startTime, endTime);
         partitionKeyQuery.Should().NotBeNull();
