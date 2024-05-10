@@ -53,11 +53,11 @@ jobs:
         run: 'dotnet build --no-restore --configuration Release'
 
       - name: Test Project
-        run: 'dotnet test --no-build --no-restore --configuration Release'
+        run: 'dotnet test --no-build --configuration Release'
 
       - name: Create Packages
         if: success() && github.event_name != 'pull_request'
-        run: 'dotnet pack --configuration Release --include-symbols --include-source --no-build --no-restore --output "${{env.BUILD_PATH}}"'
+        run: 'dotnet pack --configuration Release --no-build --output "${{env.BUILD_PATH}}"'
 
       - name: Upload Packages
         if: success() && github.event_name != 'pull_request'
