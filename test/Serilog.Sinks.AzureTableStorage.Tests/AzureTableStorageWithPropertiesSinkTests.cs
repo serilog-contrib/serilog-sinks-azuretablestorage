@@ -32,15 +32,12 @@ public class AzureTableStorageSinkTests
     public async Task WhenALoggerWritesToTheSinkItIsRetrievableFromTheTableWithProperties()
     {
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var logger = new LoggerConfiguration()
             .WriteTo.AzureTableStorage(
                 storageAccount: storageAccount,
-                storageTableName: table.Name,
-                writeInBatches: false)
+                storageTableName: table.Name)
             .CreateLogger();
 
         var exception = new ArgumentException("Some exception");
@@ -48,6 +45,8 @@ public class AzureTableStorageSinkTests
         const string messageTemplate = "{Properties} should go in their {Numbered} {Space}";
 
         logger.Information(exception, messageTemplate, "Properties", 1234, ' ');
+
+        logger.Dispose();
 
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
@@ -61,6 +60,8 @@ public class AzureTableStorageSinkTests
         Assert.Equal("Properties", result["Properties"]);
         Assert.Equal(1234, result["Numbered"]);
         Assert.Equal(" ", result["Space"]);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
@@ -68,24 +69,25 @@ public class AzureTableStorageSinkTests
     {
         // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var logger = new LoggerConfiguration()
             .WriteTo.AzureTableStorage(
                 storageAccount: storageAccount,
-                storageTableName: table.Name,
-                writeInBatches: false)
+                storageTableName: table.Name)
             .CreateLogger();
 
         const string messageTemplate = "Line 1\r\nLine2";
 
         logger.Information(messageTemplate);
 
+        logger.Dispose();
+
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
         Assert.NotNull(result);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
@@ -93,24 +95,25 @@ public class AzureTableStorageSinkTests
     {
         // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var logger = new LoggerConfiguration()
             .WriteTo.AzureTableStorage(
                 storageAccount: storageAccount,
-                storageTableName: table.Name,
-                writeInBatches: false)
+                storageTableName: table.Name)
             .CreateLogger();
 
         const string messageTemplate = "Line 1\nLine2";
 
         logger.Information(messageTemplate);
 
+        logger.Dispose();
+
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
         Assert.NotNull(result);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
@@ -118,39 +121,37 @@ public class AzureTableStorageSinkTests
     {
         // Prompted from https://github.com/serilog/serilog-sinks-azuretablestorage/issues/10
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var logger = new LoggerConfiguration()
             .WriteTo.AzureTableStorage(
                 storageAccount: storageAccount,
-                storageTableName: table.Name,
-                writeInBatches: false)
+                storageTableName: table.Name)
             .CreateLogger();
 
         const string messageTemplate = "Line 1\rLine2";
 
         logger.Information(messageTemplate);
 
+        logger.Dispose();
+
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
         Assert.NotNull(result);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
     public async Task WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForScalar()
     {
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var logger = new LoggerConfiguration()
             .WriteTo.AzureTableStorage(
                 storageAccount: storageAccount,
-                storageTableName: table.Name,
-                writeInBatches: false)
+                storageTableName: table.Name)
             .CreateLogger();
 
         var bytearrayValue = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 250, 251, 252, 253, 254, 255 };
@@ -174,6 +175,8 @@ public class AzureTableStorageSinkTests
             longValue,
             stringValue);
 
+        logger.Dispose();
+
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
         //Assert.Equal(bytearrayValue, result.Properties["ByteArray"].BinaryValue);
@@ -185,21 +188,20 @@ public class AzureTableStorageSinkTests
         Assert.Equal(intValue, result["Int"]);
         Assert.Equal(longValue, result["Long"]);
         Assert.Equal(stringValue, result["String"]);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
     public async Task WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForDictionary()
     {
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var logger = new LoggerConfiguration()
             .WriteTo.AzureTableStorage(
                 storageAccount: storageAccount,
-                storageTableName: table.Name,
-                writeInBatches: false)
+                storageTableName: table.Name)
             .CreateLogger();
 
         var dict1 = new Dictionary<string, string>{
@@ -220,34 +222,39 @@ public class AzureTableStorageSinkTests
         };
 
         logger.Information("{Dictionary}", dict0);
+        logger.Dispose();
+
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
         Assert.Equal("[(\"d1\": [(\"d1k1\": \"d1k1v1\"), (\"d1k2\": \"d1k2v2\"), (\"d1k3\": \"d1k3v3\")]), (\"d2\": [(\"d2k1\": \"d2k1v1\"), (\"d2k2\": \"d2k2v2\"), (\"d2k3\": \"d2k3v3\")])]", result["Dictionary"] as string);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
     public async Task WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForSequence()
     {
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var logger = new LoggerConfiguration()
             .WriteTo.AzureTableStorage(
                 storageAccount: storageAccount,
-                storageTableName: table.Name,
-                writeInBatches: false)
+                storageTableName: table.Name)
             .CreateLogger();
 
         var seq1 = new int[] { 1, 2, 3, 4, 5 };
         var seq2 = new string[] { "a", "b", "c", "d", "e" };
 
         logger.Information("{Seq1} {Seq2}", seq1, seq2);
+        logger.Dispose();
+
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
         Assert.Equal("[1, 2, 3, 4, 5]", result["Seq1"]);
         Assert.Equal("[\"a\", \"b\", \"c\", \"d\", \"e\"]", result["Seq2"]);
+
+        await table.DeleteAsync();
     }
 
     private class Struct1
@@ -272,15 +279,12 @@ public class AzureTableStorageSinkTests
     public async Task WhenALoggerWritesToTheSinkItStoresTheCorrectTypesForStructure()
     {
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var logger = new LoggerConfiguration()
             .WriteTo.AzureTableStorage(
                 storageAccount: storageAccount,
-                storageTableName: table.Name,
-                writeInBatches: false)
+                storageTableName: table.Name)
             .CreateLogger();
 
         var struct1 = new Struct1
@@ -302,6 +306,8 @@ public class AzureTableStorageSinkTests
         };
 
         logger.Information("{@Struct0}", struct0);
+        logger.Dispose();
+
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
 #if NET472
@@ -309,64 +315,68 @@ public class AzureTableStorageSinkTests
 #else
         Assert.Equal("Struct0 { Struct1Val: Struct1 { IntVal: 10, StringVal: \"ABCDE\" }, Struct2Val: Struct2 { DateTimeVal: 12/03/2014 17:37:12, DoubleVal: 3.141592653589793 } }", result["Struct0"]);
 #endif
+
+        await table.DeleteAsync();
     }
 
     [Fact]
     public async Task WhenALoggerWritesToTheSinkItAllowsStringFormatNumericPropertyNames()
     {
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var logger = new LoggerConfiguration()
             .WriteTo.AzureTableStorage(
                 storageAccount: storageAccount,
-                storageTableName: table.Name,
-                writeInBatches: false)
+                storageTableName: table.Name)
             .CreateLogger();
 
         var expectedResult = "Hello \"world\"";
 
         logger.Information("Hello {0}", "world");
+
+        logger.Dispose();
+
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
         Assert.Equal(expectedResult, result["RenderedMessage"]);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
     public async Task WhenALoggerWritesToTheSinkItAllowsNamedAndNumericPropertyNames()
     {
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var logger = new LoggerConfiguration()
             .WriteTo.AzureTableStorage(
                 storageAccount: storageAccount,
-                storageTableName: table.Name,
-                writeInBatches: false)
+                storageTableName: table.Name)
             .CreateLogger();
 
         var name = "John Smith";
         var expectedResult = "Hello \"world\" this is \"John Smith\" 1234";
 
         logger.Information("Hello {0} this is {Name} {_1234}", "world", name, 1234);
+
+        logger.Dispose();
+
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
         Assert.Equal(expectedResult, result["RenderedMessage"]);
         Assert.Equal(name, result["Name"]);
         Assert.Equal(1234, result["_1234"]);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
     public async Task WhenABatchLoggerWritesToTheSinkItStoresAllTheEntries()
     {
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var options = new AzureTableStorageSinkOptions
         {
@@ -390,15 +400,15 @@ public class AzureTableStorageSinkTests
 
         var result = await TableQueryTakeDynamicAsync(table, takeCount: 11);
         Assert.Equal(10, result.Count);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
     public async Task WhenABatchLoggerWritesToTheSinkItStoresAllTheEntriesInDifferentPartitions()
     {
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var options = new AzureTableStorageSinkOptions
         {
@@ -425,15 +435,15 @@ public class AzureTableStorageSinkTests
 
         var result = await TableQueryTakeDynamicAsync(table, takeCount: events.Count + 1);
         Assert.Equal(events.Count, result.Count);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
     public async Task WhenABatchLoggerWritesToTheSinkItStoresAllTheEntriesInLargeNumber()
     {
         var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
-
-        await table.DeleteAsync();
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
         var options = new AzureTableStorageSinkOptions
         {
@@ -457,6 +467,8 @@ public class AzureTableStorageSinkTests
 
         var result = await TableQueryTakeDynamicAsync(table, takeCount: 301);
         Assert.Equal(300, result.Count);
+
+        await table.DeleteAsync();
     }
 
     [Fact]
@@ -523,9 +535,8 @@ public class AzureTableStorageSinkTests
         string connectionString = DevelopmentStorageAccountConnectionString;
         string tableEndpoint = DevelopmentStorageAccountTableEndpoint;
         var storageAccount = new TableServiceClient(connectionString);
-        var table = storageAccount.GetTableClient("LogUnitTest");
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
-        await table.DeleteAsync();
         await table.CreateIfNotExistsAsync();
 
         var sharedAccessSignature = GetAccountSharedAccessSignature(storageAccount);
@@ -543,6 +554,8 @@ public class AzureTableStorageSinkTests
 
         logger.Information(exception, messageTemplate, "Properties", 1234, ' ');
 
+        logger.Dispose();
+
         var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
 
         // Check the presence of same properties as in previous version
@@ -555,5 +568,7 @@ public class AzureTableStorageSinkTests
         Assert.Equal("Properties", result["Properties"]);
         Assert.Equal(1234, result["Numbered"]);
         Assert.Equal(" ", result["Space"]);
+
+        await table.DeleteAsync();
     }
 }

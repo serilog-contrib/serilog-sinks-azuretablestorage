@@ -160,6 +160,20 @@ public static class Program
 
 ### Change Log
 
+10.0.0
+  * Breaking: writeInBatches removed, all writes are now batched
+  * Update: update to serilog 4.0
+  * Remove: removed dependance on Serilog.Sinks.PeriodicBatching, use serilog 4.0 `IBatchedLogEventSink`
+
+9.6.0
+  * Fix: improve timezone support
+
+9.5.0
+  * Add: use ULID for rowkey for speed and efficiency
+
+9.4.0
+  * Fix: prevent duplicate rowkey
+
 9.1.0
   * Add: Built-in trace and span id support
 

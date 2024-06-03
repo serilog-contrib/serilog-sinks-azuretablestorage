@@ -21,14 +21,13 @@ using Azure.Data.Tables;
 
 using Serilog.Core;
 using Serilog.Events;
-using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog.Sinks.AzureTableStorage;
 
 /// <summary>
 /// Writes log events as records to an Azure Table Storage table.
 /// </summary>
-public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
+public class AzureTableStorageSink : IBatchedLogEventSink
 {
     private readonly TableServiceClient _tableServiceClient;
     private readonly AzureTableStorageSinkOptions _options;
@@ -72,24 +71,11 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     }
 
     /// <summary>
-    /// Emit the provided log event to the sink.
-    /// </summary>
-    /// <param name="logEvent">The log event to write.</param>
-    /// <exception cref="System.NotImplementedException"></exception>
-    public void Emit(LogEvent logEvent)
-    {
-        var document = _documentFactory.Create(logEvent, _options, _keyGenerator);
-        var tableClient = _tableClientFactory.CreateTableClient(_options, _tableServiceClient);
-
-        tableClient.AddEntity(document);
-    }
-
-    /// <summary>
     /// Emit a batch of log events, running asynchronously.
     /// </summary>
     /// <param name="batch">The batch of events to emit.</param>
     /// <returns></returns>
-    public async Task EmitBatchAsync(IEnumerable<LogEvent> batch)
+    public async Task EmitBatchAsync(IReadOnlyCollection<LogEvent> batch)
     {
         // write documents in batches by partition key
         var documentGroups = batch
@@ -116,8 +102,5 @@ public class AzureTableStorageSink : ILogEventSink, IBatchedLogEventSink
     /// or timers (thus avoiding additional flush/shut-down complexity).
     /// </summary>
     /// <returns></returns>
-    public Task OnEmptyBatchAsync()
-    {
-        return Task.CompletedTask;
-    }
+    public Task OnEmptyBatchAsync() => Task.CompletedTask;
 }

@@ -25,7 +25,6 @@ using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Formatting.Json;
 using Serilog.Sinks.AzureTableStorage;
-using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog;
 
@@ -53,7 +52,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
@@ -70,7 +68,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
         IFormatProvider formatProvider = null,
         string storageTableName = null,
-        bool writeInBatches = true,
         TimeSpan? period = null,
         int? batchPostingLimit = null,
         IKeyGenerator keyGenerator = null,
@@ -92,7 +89,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
             restrictedToMinimumLevel: restrictedToMinimumLevel,
             formatProvider: formatProvider,
             storageTableName: storageTableName,
-            writeInBatches: writeInBatches,
             period: period,
             batchPostingLimit: batchPostingLimit,
             keyGenerator: keyGenerator,
@@ -111,7 +107,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
@@ -128,7 +123,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
         IFormatProvider formatProvider = null,
         string storageTableName = null,
-        bool writeInBatches = true,
         TimeSpan? period = null,
         int? batchPostingLimit = null,
         IKeyGenerator keyGenerator = null,
@@ -150,7 +144,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
             restrictedToMinimumLevel: restrictedToMinimumLevel,
             formatProvider: formatProvider,
             storageTableName: storageTableName,
-            writeInBatches: writeInBatches,
             period: period,
             batchPostingLimit: batchPostingLimit,
             keyGenerator: keyGenerator,
@@ -171,7 +164,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
@@ -189,7 +181,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
         IFormatProvider formatProvider = null,
         string storageTableName = null,
-        bool writeInBatches = true,
         TimeSpan? period = null,
         int? batchPostingLimit = null,
         IKeyGenerator keyGenerator = null,
@@ -214,7 +205,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
             restrictedToMinimumLevel: restrictedToMinimumLevel,
             formatProvider: formatProvider,
             storageTableName: storageTableName,
-            writeInBatches: writeInBatches,
             period: period,
             batchPostingLimit: batchPostingLimit,
             keyGenerator: keyGenerator,
@@ -233,7 +223,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink;</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
@@ -251,7 +240,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
         IFormatProvider formatProvider = null,
         string storageTableName = null,
-        bool writeInBatches = true,
         TimeSpan? period = null,
         int? batchPostingLimit = null,
         IKeyGenerator keyGenerator = null,
@@ -268,7 +256,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         if (storageAccount == null)
             throw new ArgumentNullException(nameof(storageAccount));
 
-        ILogEventSink sink;
         try
         {
             var options = new AzureTableStorageSinkOptions
@@ -292,30 +279,22 @@ public static class LoggerConfigurationAzureTableStorageExtensions
                 keyGenerator: keyGenerator,
                 tableClientFactory: tableClientFactory);
 
-            if (writeInBatches)
+            var batchingOptions = new BatchingOptions
             {
-                // wrap in PeriodicBatchingSink
-                var batchingOptions = new PeriodicBatchingSinkOptions
-                {
-                    BatchSizeLimit = batchPostingLimit ?? DefaultBatchSizeLimit,
-                    EagerlyEmitFirstEvent = true,
-                    Period = period ?? DefaultPeriod,
-                };
+                BatchSizeLimit = batchPostingLimit ?? DefaultBatchSizeLimit,
+                EagerlyEmitFirstEvent = true,
+                BufferingTimeLimit = period ?? DefaultPeriod,
+            };
 
-                sink = new PeriodicBatchingSink(tableStorageSink, batchingOptions);
-            }
-            else
-            {
-                sink = tableStorageSink;
-            }
+            return loggerConfiguration.Sink(tableStorageSink, batchingOptions, restrictedToMinimumLevel);
         }
         catch (Exception ex)
         {
             Debugging.SelfLog.WriteLine($"Error configuring AzureTableStorage: {ex}");
-            sink = new LoggerConfiguration().CreateLogger();
+            var sink = new LoggerConfiguration().CreateLogger();
+            return loggerConfiguration.Sink(sink);
         }
 
-        return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
     }
 
     /// <summary>
@@ -327,7 +306,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
@@ -345,7 +323,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
         IFormatProvider formatProvider = null,
         string storageTableName = null,
-        bool writeInBatches = true,
         TimeSpan? period = null,
         int? batchPostingLimit = null,
         IKeyGenerator keyGenerator = null,
@@ -373,7 +350,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
                 restrictedToMinimumLevel: restrictedToMinimumLevel,
                 formatProvider: formatProvider,
                 storageTableName: storageTableName,
-                writeInBatches: writeInBatches,
                 period: period,
                 batchPostingLimit: batchPostingLimit,
                 keyGenerator: keyGenerator,
@@ -404,7 +380,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
     /// <param name="storageTableName">Table name that log entries will be written to. Note: Optional, setting this may impact performance</param>
-    /// <param name="writeInBatches">Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink</param>
     /// <param name="batchPostingLimit">The maximum number of events to post in a single batch.</param>
     /// <param name="period">The time to wait between checking for event batches.</param>
     /// <param name="keyGenerator">The key generator used to create the PartitionKey and the RowKey for each log entry</param>
@@ -423,7 +398,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
         IFormatProvider formatProvider = null,
         string storageTableName = null,
-        bool writeInBatches = true,
         TimeSpan? period = null,
         int? batchPostingLimit = null,
         IKeyGenerator keyGenerator = null,
@@ -460,7 +434,6 @@ public static class LoggerConfigurationAzureTableStorageExtensions
                 restrictedToMinimumLevel: restrictedToMinimumLevel,
                 formatProvider: formatProvider,
                 storageTableName: storageTableName,
-                writeInBatches: writeInBatches,
                 period: period,
                 batchPostingLimit: batchPostingLimit,
                 keyGenerator: keyGenerator,
