@@ -19,7 +19,6 @@ var log = new LoggerConfiguration()
 | restrictedToMinimumLevel      | The minimum log event level required in order to write an event to the sink.        | Verbose                   |
 | formatProvider                | Culture-specific formatting information                                             |                           |
 | storageTableName              | Table name that log entries will be written to                                      | LogEvent                  |
-| writeInBatches                | Use a periodic batching sink, as opposed to a synchronous one-at-a-time sink        | true                      |
 | batchPostingLimit             | The maximum number of events to post in a single batch                              | 100                       |
 | period                        | The time to wait between checking for event batches                                 | 0:0:2                     |
 | keyGenerator                  | The key generator used to create the PartitionKey and the RowKey for each log entry | DefaultKeyGenerator       |
