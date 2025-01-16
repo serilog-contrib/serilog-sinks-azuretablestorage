@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-using FluentAssertions;
-
 using Serilog.Sinks.AzureTableStorage.Extensions;
 
 using Xunit;
@@ -26,20 +24,20 @@ public class DefaultKeyGeneratorTests
         var dateTime = new DateTimeOffset(2024, 4, 1, 23, 0, 0, TimeSpan.FromHours(-5));
 
         var rowKey = DefaultKeyGenerator.GenerateRowKey(dateTime);
-        rowKey.Should().NotBeNull();
+        Assert.NotNull(rowKey);
 
         var parsed = Ulid.TryParse(rowKey, out var ulid);
-        parsed.Should().BeTrue();
-        ulid.Should().NotBeNull();
+        Assert.True(parsed);
+        Assert.NotEqual(default, ulid);
 
         var reversed = dateTime.ToUniversalTime().ToReverseChronological();
         var ulidDate = ulid.Time;
 
-        ulidDate.Year.Should().Be(reversed.Year);
-        ulidDate.Month.Should().Be(reversed.Month);
-        ulidDate.Day.Should().Be(reversed.Day);
-        ulidDate.Hour.Should().Be(reversed.Hour);
-        ulidDate.Minute.Should().Be(reversed.Minute);
+        Assert.Equal(reversed.Year, ulidDate.Year);
+        Assert.Equal(reversed.Month, ulidDate.Month);
+        Assert.Equal(reversed.Day, ulidDate.Day);
+        Assert.Equal(reversed.Hour, ulidDate.Hour);
+        Assert.Equal(reversed.Minute, ulidDate.Minute);
     }
 
 
@@ -49,8 +47,8 @@ public class DefaultKeyGeneratorTests
         var dateTime = new DateTimeOffset(2024, 4, 1, 23, 0, 0, TimeSpan.FromHours(-5));
 
         var partitionKey = DefaultKeyGenerator.GeneratePartitionKey(dateTime);
-        partitionKey.Should().NotBeNull();
-        partitionKey.Should().Be("2516902703999999999");
+        Assert.NotNull(partitionKey);
+        Assert.Equal("2516902703999999999", partitionKey);
     }
 
     [Fact]
@@ -60,8 +58,8 @@ public class DefaultKeyGeneratorTests
         var eventTime = dateTime.UtcDateTime;
 
         var partitionKey = DefaultKeyGenerator.GeneratePartitionKey(eventTime);
-        partitionKey.Should().NotBeNull();
-        partitionKey.Should().Be("2516902703999999999");
+        Assert.NotNull(partitionKey);
+        Assert.Equal("2516902703999999999", partitionKey);
     }
 
     [Theory]
@@ -69,8 +67,8 @@ public class DefaultKeyGeneratorTests
     public void GeneratePartitionKeyDateTimeNowRound(DateTimeOffset dateTime, string expected)
     {
         var partitionKey = DefaultKeyGenerator.GeneratePartitionKey(dateTime);
-        partitionKey.Should().NotBeNull();
-        partitionKey.Should().Be(expected);
+        Assert.NotNull(partitionKey);
+        Assert.Equal(expected, partitionKey);
     }
 
     public static IEnumerable<object[]> GetDateRounding()
@@ -108,8 +106,8 @@ public class DefaultKeyGeneratorTests
         var date = new DateOnly(2024, 4, 1);
 
         var partitionKeyQuery = DefaultKeyGenerator.GeneratePartitionKeyQuery(date, TimeSpan.FromHours(-5));
-        partitionKeyQuery.Should().NotBeNull();
-        partitionKeyQuery.Should().Be("(PartitionKey ge '2516902667999999999') and (PartitionKey lt '2516903531999999999')");
+        Assert.NotNull(partitionKeyQuery);
+        Assert.Equal("(PartitionKey ge '2516902667999999999') and (PartitionKey lt '2516903531999999999')", partitionKeyQuery);
     }
 
     [Fact]
@@ -122,8 +120,8 @@ public class DefaultKeyGeneratorTests
         var endTime = endDate.UtcDateTime;
 
         var partitionKeyQuery = DefaultKeyGenerator.GeneratePartitionKeyQuery(startTime, endTime);
-        partitionKeyQuery.Should().NotBeNull();
-        partitionKeyQuery.Should().Be("(PartitionKey ge '2516902667999999999') and (PartitionKey lt '2516903531999999999')");
+        Assert.NotNull(partitionKeyQuery);
+        Assert.Equal("(PartitionKey ge '2516902667999999999') and (PartitionKey lt '2516903531999999999')", partitionKeyQuery);
     }
 
     [Fact]
@@ -133,8 +131,8 @@ public class DefaultKeyGeneratorTests
         var endTime = new DateTimeOffset(2024, 4, 2, 0, 0, 0, TimeSpan.FromHours(-5));
 
         var partitionKeyQuery = DefaultKeyGenerator.GeneratePartitionKeyQuery(startTime, endTime);
-        partitionKeyQuery.Should().NotBeNull();
-        partitionKeyQuery.Should().Be("(PartitionKey ge '2516902667999999999') and (PartitionKey lt '2516903531999999999')");
+        Assert.NotNull(partitionKeyQuery);
+        Assert.Equal("(PartitionKey ge '2516902667999999999') and (PartitionKey lt '2516903531999999999')", partitionKeyQuery);
     }
 
 }
