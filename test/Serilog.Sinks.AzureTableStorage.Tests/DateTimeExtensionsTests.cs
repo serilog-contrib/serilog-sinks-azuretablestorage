@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-using FluentAssertions;
-
 using Serilog.Sinks.AzureTableStorage.Extensions;
 
 using Xunit;
@@ -25,7 +23,7 @@ public class DateTimeExtensionsTests
     public void GeneratePartitionKeyDateTimeNowRound(DateTime dateTime, DateTime expected, TimeSpan span)
     {
         var rounded = DateTimeExtensions.Round(dateTime, span);
-        rounded.Should().Be(expected);
+        Assert.Equal(expected, rounded);
     }
 
     public static IEnumerable<object[]> GetDateRounding()
