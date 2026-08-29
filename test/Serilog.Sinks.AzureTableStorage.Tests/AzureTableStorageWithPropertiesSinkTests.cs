@@ -571,4 +571,75 @@ public class AzureTableStorageSinkTests
 
         await table.DeleteAsync();
     }
+
+
+       
+    [Fact (Skip = "Does not work with Storage Emulator as it does not feature the 64K cell limit (or 32K string)")]
+    public async Task WhenALoggerWritesToTheSinkAndACellExceeds32KAnExceptionIsRaised()
+    {
+        var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
+
+        var logger = new LoggerConfiguration()
+            .WriteTo.AzureTableStorage(
+                storageAccount: storageAccount,
+                storageTableName: table.Name)
+            .CreateLogger();
+
+        var exception = new ArgumentException("Some exception");
+
+        const string messageTemplate = "{tooBig}";
+
+        var tooBig = new string('a', 33000);
+
+        Assert.Throws<Exception>(() => logger.Information(exception, messageTemplate, tooBig));
+
+        logger.Dispose();
+
+        await table.DeleteAsync();
+    }
+
+    [Fact (Skip = "Does not work with Storage Emulator as it does not feature the 64K cell limit (or 32K string)")]
+    public async Task WhenALoggerWritesToTheSinkAndACellExceeds32KAnExceptionIsRaisedButSubsequentCallsContinueToWorkAsExpected()
+    {
+        var storageAccount = new TableServiceClient(DevelopmentStorageAccountConnectionString);
+        var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
+
+        var logger = new LoggerConfiguration()
+            .WriteTo.AzureTableStorage(
+                storageAccount: storageAccount,
+                storageTableName: table.Name)
+            .CreateLogger();
+
+        var exception = new ArgumentException("Some exception");
+
+        const string messageTemplate = "{tooBig}";
+
+        var tooBig = new string('a', 33000);
+        var notTooBig = new string('b', 1000);
+
+        Assert.Throws<Exception>(() => logger.Information(exception, messageTemplate, tooBig));
+
+        // After the expected exception, the logger should continue to work on subsequent calls
+        const string messageTemplate2 = "{Properties} should go in their {Numbered} {Space}";
+
+        logger.Information(exception, messageTemplate2, "Properties", 1234, ' ');
+        logger.Dispose();
+
+        var result = (await TableQueryTakeDynamicAsync(table, takeCount: 1)).First();
+
+        // Check the presence of same properties as in previous version
+        Assert.Equal(messageTemplate2, result["MessageTemplate"]);
+        Assert.Equal("Information", result["Level"]);
+        Assert.Equal("System.ArgumentException: Some exception", result["Exception"]);
+        Assert.Equal("\"Properties\" should go in their 1234  ", result["RenderedMessage"]);
+
+        // Check the presence of the new properties.
+        Assert.Equal("Properties", result["Properties"]);
+        Assert.Equal(1234, result["Numbered"]);
+        Assert.Equal(" ", result["Space"]);
+
+        await table.DeleteAsync();
+    }
+
 }
