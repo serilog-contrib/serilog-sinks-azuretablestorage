@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using Serilog.Events;
 using Serilog.Parsing;
 
-using Xunit;
-
 namespace Serilog.Sinks.AzureTableStorage.Tests;
 
 public class AzureTableStorageEntityFactoryTests

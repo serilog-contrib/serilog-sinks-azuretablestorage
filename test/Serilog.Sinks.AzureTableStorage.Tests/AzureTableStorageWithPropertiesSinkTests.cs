@@ -9,8 +9,6 @@ using Azure.Data.Tables.Sas;
 using Serilog.Events;
 using Serilog.Parsing;
 
-using Xunit;
-
 namespace Serilog.Sinks.AzureTableStorage.Tests;
 
 public class AzureTableStorageSinkTests
@@ -61,7 +59,7 @@ public class AzureTableStorageSinkTests
         Assert.Equal(1234, result["Numbered"]);
         Assert.Equal(" ", result["Space"]);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -87,7 +85,7 @@ public class AzureTableStorageSinkTests
 
         Assert.NotNull(result);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -113,7 +111,7 @@ public class AzureTableStorageSinkTests
 
         Assert.NotNull(result);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -139,7 +137,7 @@ public class AzureTableStorageSinkTests
 
         Assert.NotNull(result);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -189,7 +187,7 @@ public class AzureTableStorageSinkTests
         Assert.Equal(longValue, result["Long"]);
         Assert.Equal(stringValue, result["String"]);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -228,7 +226,7 @@ public class AzureTableStorageSinkTests
 
         Assert.Equal("[(\"d1\": [(\"d1k1\": \"d1k1v1\"), (\"d1k2\": \"d1k2v2\"), (\"d1k3\": \"d1k3v3\")]), (\"d2\": [(\"d2k1\": \"d2k1v1\"), (\"d2k2\": \"d2k2v2\"), (\"d2k3\": \"d2k3v3\")])]", result["Dictionary"] as string);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -254,7 +252,7 @@ public class AzureTableStorageSinkTests
         Assert.Equal("[1, 2, 3, 4, 5]", result["Seq1"]);
         Assert.Equal("[\"a\", \"b\", \"c\", \"d\", \"e\"]", result["Seq2"]);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     private class Struct1
@@ -316,7 +314,7 @@ public class AzureTableStorageSinkTests
         Assert.Equal("Struct0 { Struct1Val: Struct1 { IntVal: 10, StringVal: \"ABCDE\" }, Struct2Val: Struct2 { DateTimeVal: 12/03/2014 17:37:12, DoubleVal: 3.141592653589793 } }", result["Struct0"]);
 #endif
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -341,7 +339,7 @@ public class AzureTableStorageSinkTests
 
         Assert.Equal(expectedResult, result["RenderedMessage"]);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -369,7 +367,7 @@ public class AzureTableStorageSinkTests
         Assert.Equal(name, result["Name"]);
         Assert.Equal(1234, result["_1234"]);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -401,7 +399,7 @@ public class AzureTableStorageSinkTests
         var result = await TableQueryTakeDynamicAsync(table, takeCount: 11);
         Assert.Equal(10, result.Count);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -436,7 +434,7 @@ public class AzureTableStorageSinkTests
         var result = await TableQueryTakeDynamicAsync(table, takeCount: events.Count + 1);
         Assert.Equal(events.Count, result.Count);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -468,7 +466,7 @@ public class AzureTableStorageSinkTests
         var result = await TableQueryTakeDynamicAsync(table, takeCount: 301);
         Assert.Equal(300, result.Count);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -537,7 +535,7 @@ public class AzureTableStorageSinkTests
         var storageAccount = new TableServiceClient(connectionString);
         var table = storageAccount.GetTableClient($"LogUnitTest{DateTime.Now.Ticks}");
 
-        await table.CreateIfNotExistsAsync();
+        await table.CreateIfNotExistsAsync(TestContext.Current.CancellationToken);
 
         var sharedAccessSignature = GetAccountSharedAccessSignature(storageAccount);
 
@@ -569,6 +567,6 @@ public class AzureTableStorageSinkTests
         Assert.Equal(1234, result["Numbered"]);
         Assert.Equal(" ", result["Space"]);
 
-        await table.DeleteAsync();
+        await table.DeleteAsync(TestContext.Current.CancellationToken);
     }
 }

@@ -156,6 +156,37 @@ public static class Program
     }
 }
 ```
+### Example: Using `DefaultAzureCredential`
+
+To use Azure Managed Identity or other Azure SDK credential flows with this sink, you can provide an existing `TableServiceClient` instance constructed with `DefaultAzureCredential`. This is especially useful for Azure-hosted environments where connection strings are discouraged.
+
+```csharp
+using Azure.Data.Tables;
+using Azure.Identity;
+using Serilog;
+
+// Replace with your actual Azure Table Storage endpoint
+string tableEndpoint = "https://yourstorageaccountname.table.core.windows.net/";
+
+// Create DefaultAzureCredential
+var credential = new DefaultAzureCredential();
+
+// Create TableServiceClient with the endpoint and credential
+var tableServiceClient = new TableServiceClient(new Uri(tableEndpoint), credential);
+
+// Configure Serilog to use the TableServiceClient
+var log = new LoggerConfiguration()
+    .WriteTo.AzureTableStorage(
+        tableServiceClient: tableServiceClient,
+        storageTableName: "LogEvent"
+        // [other options as desired]
+    )
+    .CreateLogger();
+```
+
+> **Note:**  
+> The `AzureTableStorage` sink will use the provided `TableServiceClient` for all operations.  
+> The `DefaultAzureCredential` will automatically select the most appropriate authentication mechanism depending on your environment: Azure Managed Identity, Visual Studio sign-on, Azure CLI, etc.  
 
 ### Change Log
 

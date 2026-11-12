@@ -3,9 +3,6 @@ using System.Collections.Generic;
 
 using Serilog.Sinks.AzureTableStorage.Extensions;
 
-using Xunit;
-using Xunit.Abstractions;
-
 namespace Serilog.Sinks.AzureTableStorage.Tests;
 
 public class DateTimeExtensionsTests
