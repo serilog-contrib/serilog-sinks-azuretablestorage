@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Serilog event sink that writes to Azure Table Storage over HTTP.</Description>
     <Authors>serilog-contrib</Authors>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net10.0;net11.0;</TargetFrameworks>
     <AssemblyName>Serilog.Sinks.AzureTableStorage</AssemblyName>
     <AssemblyOriginatorKeyFile>../../assets/Serilog.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>

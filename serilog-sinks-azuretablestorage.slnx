@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Artifacts/">
+    <File Path=".editorconfig" />
+    <File Path=".github/workflows/build.yml" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Samples/">
+    <Project Path="samples/SampleConsoleApplication/SampleConsoleApplication.csproj" />
+    <Project Path="samples/SampleStressTest/SampleStressTest.csproj" />
+    <Project Path="samples/SampleWebApplication/SampleWebApplication.csproj" />
+  </Folder>
+  <Project Path="src/Serilog.Sinks.AzureTableStorage/Serilog.Sinks.AzureTableStorage.csproj" />
+  <Project Path="test/Serilog.Sinks.AzureTableStorage.Tests/Serilog.Sinks.AzureTableStorage.Tests.csproj" />
+</Solution>
